@@ -18,13 +18,24 @@
 
 void StackTrace_entry(const char* name, int line, int trace) {
 #ifdef TR_OUPUT
+	(void)trace;
 	TR_OUPUT("MQTT_ENTRY:%s:%d",name, line);
+#else
+	(void)name;
+	(void)line;
+	(void)trace;
 #endif
 }
 
 void StackTrace_exit(const char* name, int line, void* return_value, int trace) {
 #ifdef TR_OUPUT
-	TR_OUPUT("MQTT_EXIT :%s:%d: return=%d", name,line , (return_value) ? * (int*)return_value : 0 );
+	(void)trace;
+	TR_OUPUT("MQTT_EXIT :%s:%d: return=%d", name, line, (return_value) ? * (int*)return_value : 0 );
+#else
+	(void)name;
+	(void)line;
+	(void)return_value;
+	(void)trace;
 #endif
 }
 

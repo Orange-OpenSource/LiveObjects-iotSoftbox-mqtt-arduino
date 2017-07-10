@@ -25,6 +25,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "liveobjects-client/LiveObjectsClient_Config.h"
+
 #include "liveobjects-sys/LiveObjectsClient_Platform.h"
 #include "platform_default.h"
 
@@ -502,7 +504,7 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 	while ((size > 0) && (token_cnt > 0)) {
 		int8_t val_type;
 		char* val_ptr;
-		uint32_t val_len;
+		int32_t val_len;
 		int len = tokens[idx].end - tokens[idx].start;
 		if ((tokens[idx].type != JSMN_STRING) || (tokens[idx].size != 1)) {
 			// error;
@@ -544,7 +546,7 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 				}
 				else if ((len == 3) && !strncmp("md5", payload_data + tokens[idx].start, len)) {
 					val_type = 4;
-					val_ptr = pRscUpd->ursc_md5;
+					val_ptr = (char*)pRscUpd->ursc_md5;
 					val_len = sizeof(pRscUpd->ursc_md5);
 				}
 				else {
@@ -681,10 +683,15 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 #if LOC_FEATURE_LO_PARAMS
 int LO_msg_decode_params_req(const char* payload_data, uint32_t payload_len, const LOMSetOfParams_t* pSetCfg,
 		LOMSetofUpdatedParams_t* pSetCfgUpdate) {
+#ifndef LOC_MAX_OF_PARSED_PARAMS
+#warning "LOC_MAX_OF_PARSED_PARAMS not defined -> set to 5"
+#define LOC_MAX_OF_PARSED_PARAMS   5
+#endif
+#define NB_TK_FOR_PARMS    (5+6*LOC_MAX_OF_PARSED_PARAMS+1)  //  6 tokens by parameter
 	int ret;
 	int token_cnt;
 	jsmn_parser parser;
-	jsmntok_t tokens[25];
+	jsmntok_t tokens[NB_TK_FOR_PARMS];
 	int idx;
 	int size;
 	const char* pc;
@@ -701,12 +708,13 @@ int LO_msg_decode_params_req(const char* payload_data, uint32_t payload_len, con
 
 	memset(&tokens, 0, sizeof(tokens));
 	jsmn_init(&parser);
-	token_cnt = jsmn_parse(&parser, payload_data, payload_len, tokens, 25);
+	token_cnt = jsmn_parse(&parser, payload_data, payload_len, tokens, NB_TK_FOR_PARMS);
 	if (token_cnt < 0) {
-		LOTRACE_ERR("ERROR %d returned by jsmn_parse", token_cnt);
+		LOTRACE_ERR("ERROR %d returned by jsmn_parse (max params=%u)", token_cnt, LOC_MAX_OF_PARSED_PARAMS);
 		LOTRACE_ERR("'%s'", payload_data);
 		return -1;
 	}
+#undef NB_TK_FOR_PARMS
 	if (token_cnt == 0) {
 		LOTRACE_ERR("EMPTY !!");
 		return 0;

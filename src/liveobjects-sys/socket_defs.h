@@ -33,10 +33,12 @@
 #define MQTT_PACKET_HEADER_FILE   "MQTTPacket/MQTTPacket.h"
 
 #if defined(ARDUINO_MEDIATEK)
+#define PRIsock   "d"
 // Socket handle 
 #define SOCKETHANDLE_NULL      ((socketHandle_t)-1)
 typedef int socketHandle_t;
 #else
+#define PRIsock   "p"
 #define SOCKETHANDLE_NULL      ((socketHandle_t)0)
 typedef void* socketHandle_t;
 #endif

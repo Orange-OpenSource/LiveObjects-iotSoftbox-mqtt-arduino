@@ -28,7 +28,7 @@
 #define LOGP_MSG_TAG  0x5A
 
 #define TRACE_LEVELS_MAX      7
-#define LOGP_MAX_MSG_SIZE     150
+#define LOGP_MAX_MSG_SIZE     250
 #define LOGP_TAIL_MSG_SIZE    5
 
 static uint8_t _trace_console = 1;
@@ -48,7 +48,7 @@ extern "C" void lo_trace_level(int level) {
 }
 
 extern "C" void lo_trace_log(int level,
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) || defined(ARDUINO_ARCH_SAMD)
 		const char *file,
 		unsigned int line,
 		const char *function,
@@ -104,7 +104,7 @@ extern "C" void lo_trace_log(int level,
 			if (pt_str < end_str)
 				pt_str += snprintf(pt_str, end_str - pt_str, ":%c:", *(_trace_TraceLib + level));
 
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) || defined(ARDUINO_ARCH_SAMD)
 			/*Add file:line: */
 			if (pt_str < end_str) {
 				const char* name = strrchr(file, '\\');

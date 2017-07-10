@@ -2,28 +2,14 @@
 
 This repository contains LiveObject IoT Client Library (used to connect devices to LiveObject Server from our partners).
 
-Please, have a look to the [user manual](docs/liveobjects_starterkit_arduino_v1.0.pdf) to have a presentation of the library and to be more familiar with it.
-
 Visit [Datavenue Live Objects - complete guide](https://liveobjects.orange-business.com/doc/html/lo_manual.html).
 
 And mainly the [Device mode](https://liveobjects.orange-business.com/doc/html/lo_manual.html#MQTT_MODE_DEVICE) section.
 
 **We use the [Arduino IDE](https://www.arduino.cc/en/Main/Software) for all our operations.** Download and install it before going any further.
 
-## Warning
-
-Our library being quite huge for tiny devices, the smallest one we support is the **Arduino Mega**.
-Others Arduino's like platforms **MIGHT** be compatible if they have a similar amount of memory (or more) but we **DON'T** certify it.
-
-There is two distinct Arduino's libraries in this release, one is for the Mediatek LinkIt One and the other for the Arduino Mega.
-
-The Mediatek LinkIt One library has full LiveObjects features enabled.
-
-The Arduino Mega library does not support TLS and resource update.
-
 ## Table of content
 
-- [Warning](#warning)
 - [Requirement](#requirement)
 	- [Hardware](#hardware)
 	- [Software](#software)
@@ -54,16 +40,17 @@ The Arduino Mega library does not support TLS and resource update.
 * An Arduino compatible platform like :
 	1. the Mediatek [LinkIt-ONE](https://labs.mediatek.com/en/platform/linkit-one)
 		* SIM card to use GSM/GPRS communication interface.
-	1. the [Arduino Mega 2560 or ADK](https://www.arduino.cc/en/Main/arduinoBoardMega2560) with :
-		* a communication shield as [Arduino Ethernet](https://www.arduino.cc/en/Main/ArduinoBoardEthernet) or [Arduino Ethernet Shield 2](https://www.arduino.cc/en/Main/ArduinoEthernetShield).
 * Internet connectivity
 
-Note: As SRAM memory size is too small, the Arduino Mega 2560 does not allow the mbedtls implementation.
-
+Note: The mbedtls implementation requires a board with the RAM size > = 16 K Bytes.
 
 ### Software
 
 * [Arduino IDE](https://www.arduino.cc/en/Main/Software). Tested with ARDUINO 1.8.1
+* Install additional packages/libraries (to use your board and communication shield). 
+	* If you’re using the LinkIt One board, you will need:
+		* to download the Mediatek SDK. Procedure is described [here](https://docs.labs.mediatek.com/resource/linkit-one/en/getting-started/get-started-on-windows/install-the-arduino-ide-and-linkit-one-sdk)
+		* to patch the GSM library (see  in the directory iotsoftbox_mqtt_arduino/tools/gsm_patch)
 
 ### LiveObjects API Key
 
@@ -105,12 +92,12 @@ After that you will be able to compile and upload program to the LinkIt-ONE
 ## Usage
 ### Library Installation
 
-> - According to your board, download the zip file from web site https://github.com/Orange-OpenSource/LiveObjects-iotSoftbox-mqtt-arduino.
-	1. Mediatek LinkIt One : **iotsoftbox_mqtt_arduino_mdk.zip**
-	1. Arduino Mega 2560 : **iotsoftbox_mqtt_arduino_mega.zip**
-> - Open your Arduino IDE and add this library **Sketch** -> **Include Library** -> **Add .ZIP Library** and Select the zip file (`iotsoftbox_mqtt_arduino_mdk.zip` for example)
+> - Download the zip file from web site https://github.com/Orange-OpenSource/LiveObjects-iotSoftbox-mqtt-arduino.
+>	**iotsoftbox_mqtt_arduino.zip**, containing library and examples for the following boards:
+>	1. Mediatek LinkIt One
+> - Open your Arduino IDE and add this library **Sketch** -> **Include Library** -> **Add .ZIP Library** and Select the zip file : `iotsoftbox_mqtt_arduino.zip`
 > - Need to update the file `<Arduino user dir>\libraries\iotsoftbox_mqtt_arduino\src\config\liveobjects_dev_params.h` to set your Live Objects Tenant API key
-> - Open example sketch **File** -> **Examples** -> **LiveObjects iotsoftbox** -> **liveobjects_sample_basic_mdk** (or liveobjects_sample_basic_mega_eth for an arduino mega board)
+> - Open example sketch **File** -> **Examples** -> **LiveObjects iotsoftbox** -> **liveobjects_sample_basic_mdk** (or liveobjects_sample_basic for an arduino board)
 > - For LintIt One board, edit `liveobjects_sample_basic_mdk.h`  file to set your SIM parameters: **GPRS_APN** , **GPRS_USERNAME** , **GPRS_PASSWORD**
 
 ### Select the correct board
@@ -118,11 +105,6 @@ After that you will be able to compile and upload program to the LinkIt-ONE
 - Mediatek LinkIt One:
 	* **Tools -> Boards -> LinkIt One**
 	* **Tools -> Programmer -> LinkIt Firmware Updater**
-- Arduino Mega 2560:
-	* **Tools -> Boards -> Arduino/Genuino Mega or Mega 2560**
-	* **Tools -> Processor -> ATmega 2560 (Mega 2560)**
-	* **Tools -> Programmer -> AVRISP mkII**
-
 
 ### Build an example
 

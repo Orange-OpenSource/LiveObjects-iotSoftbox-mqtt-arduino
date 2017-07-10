@@ -1,7 +1,8 @@
 /**
- * \file config.h
+ * \file compat-1.3.h
  *
- * \brief Compatibility names (set of defines)
+ * \brief Compatibility definitions for using mbed TLS with client code written
+ *  for the PolarSSL naming conventions.
  *
  * \deprecated Use the new names directly instead
  *
@@ -1992,7 +1993,7 @@
 #define entropy_update_manual mbedtls_entropy_update_manual
 #define entropy_update_seed_file mbedtls_entropy_update_seed_file
 #define entropy_write_seed_file mbedtls_entropy_write_seed_file
-#define error_strerror mbedtls_error_strerror
+#define error_strerror mbedtls_strerror
 #define f_source_ptr mbedtls_entropy_f_source_ptr
 #define gcm_auth_decrypt mbedtls_gcm_auth_decrypt
 #define gcm_context mbedtls_gcm_context
@@ -2006,7 +2007,6 @@
 #define get_timer mbedtls_timing_get_timer
 #define hardclock mbedtls_timing_hardclock
 #define hardclock_poll mbedtls_hardclock_poll
-#define hardware_poll mbedtls_hardware_poll
 #define havege_free mbedtls_havege_free
 #define havege_init mbedtls_havege_init
 #define havege_poll mbedtls_havege_poll
@@ -2453,7 +2453,6 @@
 #define ssl_set_arc4_support mbedtls_ssl_conf_arc4_support
 #define ssl_set_authmode mbedtls_ssl_conf_authmode
 #define ssl_set_bio mbedtls_ssl_set_bio
-#define ssl_set_bio mbedtls_ssl_set_bio_timeout
 #define ssl_set_ca_chain mbedtls_ssl_conf_ca_chain
 #define ssl_set_cbc_record_splitting mbedtls_ssl_conf_cbc_record_splitting
 #define ssl_set_ciphersuites mbedtls_ssl_conf_ciphersuites

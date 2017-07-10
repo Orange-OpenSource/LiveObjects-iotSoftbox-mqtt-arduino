@@ -33,8 +33,29 @@ void LOCC_mqtt_dump_msg(const unsigned char* p_buf);
 
 
 #else
-
+/*
+ * NETW_MBEDTLS_DBG
+ * see mbedtls/debug.h  mbedtls_debug_set_threshold( int threshold );
+ * threshold : Debug levels
+ * - 0 No debug
+ * - 1 Error
+ * - 2 State change
+ * - 3 Informational
+ * - 4 Verbose
+ */
 #define NETW_MBEDTLS_DBG   1
+
+#define MBEDTLS_VERIFY      1
+#define MBEDTLS_TIMER       0
+#define MBEDTLS_DTLS_TIMER  0
+
+#if MBEDTLS_DTLS_TIMER && defined(MBEDTLS_SSL_PROTO_DTLS)
+// See mbedtls_ssl_conf_handshake_timeout() in mbedtls/ssl.h
+// Set retransmit timeout values for the DTLS handshake. (DTLS only, no effect on TLS.)
+// Messages are retransmitted up to log2(ceil(max/min)) times
+#define MBEDTLS_DTLS_TIMER_MIN  (2000)   // default  1000 ms
+#define MBEDTLS_DTLS_TIMER_MAX  (80000)  // default 60000 ms
+#endif
 
 #include "mbedtls/config.h"
 
@@ -53,10 +74,8 @@ void LOCC_mqtt_dump_msg(const unsigned char* p_buf);
 
 /* #include "mbedtls/timing.h" */
 
-#define MBEDTLS_VERIFY
-//#define MBEDTLS_TIMER
 
-#ifdef  MBEDTLS_TIMER
+#if MBEDTLS_TIMER
 #include "paho-mqttclient-c/timer_interface.h"
 #endif
 
@@ -78,7 +97,7 @@ static mbedtls_x509_crt _netw_cacert;
 static mbedtls_x509_crt _netw_clicert;
 static mbedtls_pk_context _netw_pkey;
 
-#ifdef MBEDTLS_TIMER
+#if MBEDTLS_TIMER
 static struct {
 	uint8_t timer_cancelled;
 	Timer timer_intermediate;
@@ -93,10 +112,16 @@ static struct {
 
 /* --------------------------------------------------------------------------------- */
 /*  */
-static void netw_mbedtls_err(unsigned int ret, int line, const char* fonc) {
-	char buf[100];
-	mbedtls_strerror(ret, buf, sizeof(buf));
-	LOTRACE_ERR("NETWRAPPER:%d: MBEDTLS_ERR in %s()  0X%X -0X%X = '%s'", line, fonc, ret, -ret, buf);
+static void netw_mbedtls_err(int ret, int line, const char* fonc) {
+	int err_ret = (ret >= 0) ? ret : -ret;
+	LOTRACE_ERR_I("netw_wrapper:%d: MBEDTLS_ERR in %s() %d X%X 0x%04X 0x%04X", line, fonc, ret, err_ret, err_ret & 0xFF80, err_ret & 0x7F);
+#if defined(MBEDTLS_ERROR_C)
+	{
+		char buf[142];
+		mbedtls_strerror(ret, buf, sizeof(buf));
+		LOTRACE_ERR_I("MBEDTLS_ERR: '%s'",buf);
+	}
+#endif
 }
 
 /* --------------------------------------------------------------------------------- */
@@ -118,19 +143,19 @@ void netw_mbedtls_debug(void *ctx, int level, const char *file, int line, const 
 			name = file;
 		}
 	}
-	LOTRACE_INF("%d:%s:%d: %s", level, name, line, msg);
+	LOTRACE_NOTICE("%d:%s:%d: %s", level, name, line, msg);
 #else
-	LOTRACE_INF("%d:%s:%d: %s", level, file, line, msg);
+	LOTRACE_NOTICE("%d:%s:%d: %s", level, file, line, msg);
 #endif
 }
 #endif
 
-#ifdef MBEDTLS_TIMER
+#if MBEDTLS_TIMER
 void f_timing_set_delay( void *data, uint32_t int_ms, uint32_t fin_ms )
 {
 
 	if (data != &_netw_timer) {
-		LOTRACE_ERR("BAD handle - intermediate: %u  final: %u", int_ms, fin_ms);
+		LOTRACE_ERR_I("BAD handle - intermediate: %u  final: %u", int_ms, fin_ms);
 		return;
 	}
 	if( int_ms > 0 && fin_ms > 0 ) {
@@ -152,7 +177,7 @@ void f_timing_set_delay( void *data, uint32_t int_ms, uint32_t fin_ms )
 int f_timing_get_delay( void *data )
 {
 	if (data != &_netw_timer) {
-		LOTRACE_ERR("BAD handle !!");
+		LOTRACE_ERR_I("BAD handle !!");
 		return 0;
 	}
 	if(_netw_timer.timer_cancelled) {
@@ -235,14 +260,14 @@ int netw_mqtt_write(Network *pNetwork, unsigned char *pMsg, int len, int timeout
 			}
 		}
 #else
-		LOTRACE_ERR("Error while writting bytes: TLS required but not supported");
+		LOTRACE_ERR_I("Error while writting bytes: TLS required but not supported");
 		written = -1;
 #endif
 	}
 	else {
 		written = f_netw_sock_send(pNetwork, pMsg, len);
 		if (written < 0) {
-			LOTRACE_ERR("(len=%d,timeout_ms=%d) ERROR %d", len, timeout_ms, written);
+			LOTRACE_ERR_I("(len=%d,timeout_ms=%d) ERROR %d", len, timeout_ms, written);
 			return written;
 		}
 	}
@@ -295,7 +320,7 @@ int netw_mqtt_read(Network *pNetwork, unsigned char *pMsg, int len, int timeout_
 		} while (!isErrorFlag && !isCompleteFlag);
 
 #else
-		LOTRACE_ERR("Error while reading bytes: TLS required but not supported");
+		LOTRACE_ERR_I("Error while reading bytes: TLS required but not supported");
 		ret = -1;
 #endif
 	}
@@ -303,7 +328,7 @@ int netw_mqtt_read(Network *pNetwork, unsigned char *pMsg, int len, int timeout_
 		ret = f_netw_sock_recv_timeout(pNetwork, pMsg, len, timeout_ms);
 		if (ret < 0) {
 			if ((ret != NETW_ERR_SSL_WANT_READ) && (ret != NETW_ERR_SSL_TIMEOUT))
-				LOTRACE_ERR("f_netw_sock_recv_timeout(len=%d) -> ERROR %d x%x", len, ret, ret);
+				LOTRACE_ERR_I("f_netw_sock_recv_timeout(len=%d) -> ERROR %d x%x", len, ret, ret);
 			return ret;
 		}
 	}
@@ -333,7 +358,7 @@ void netw_mqtt_disconnect(Network *pNetwork)
 /*
  * This is a function to do further verification if needed on the cert received
  */
-#ifdef MBEDTLS_VERIFY
+#if MBEDTLS_VERIFY
 static int myCertVerify(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *ssl_flags) {
 	char buf[1024];
 	((void) data);
@@ -361,10 +386,10 @@ static int myCertVerify(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *
 			;
 		}
 		if (*ssl_flags) {
-			LOTRACE_ERR("ERROR - 0x%x", *ssl_flags);
+			LOTRACE_ERR_I("ERROR - 0x%x", *ssl_flags);
 			/* ! The certificate Common Name (CN) does not match with the expected CN */
 			if (*ssl_flags & 0x04) {
-				LOTRACE_ERR("ERROR - UNEXPECTED CERTIFICATE COMMON NAME");
+				LOTRACE_ERR_I("ERROR - UNEXPECTED CERTIFICATE COMMON NAME");
 			}
 			return -1;
 		}
@@ -406,9 +431,13 @@ int netw_init(Network *pNetwork, void* net_iface_handler) {
 	mbedtls_ctr_drbg_init(&_netw_ctr_drbg);
 	mbedtls_entropy_init(&_netw_entropy);
 
+#if defined(MBEDTLS_CONFIG_NAME)
+	LOTRACE_ERR_I("netw_init:  MBEDTLS_CONFIG_NAME = " MBEDTLS_CONFIG_NAME);
+#endif
+
 #if defined(MBEDTLS_DEBUG_C) && (NETW_MBEDTLS_DBG > 0)
 	mbedtls_debug_set_threshold(NETW_MBEDTLS_DBG);
-	LOTRACE_INF("netw_init: SET DEBUG %p !!", netw_mbedtls_debug);
+	LOTRACE_ERR_I("netw_init: SET MBEDTLS_DEBUG threshold=%d !!", NETW_MBEDTLS_DBG);
 	mbedtls_ssl_conf_dbg(&_netw_conf, netw_mbedtls_debug, &_netw_conf);
 #endif
 
@@ -448,7 +477,7 @@ int netw_setSecurity(Network *pNetwork, const LiveObjectsSecurityParams_t* param
 #if defined(MBEDTLS_FS_IO)
 			ret = mbedtls_x509_crt_parse_file(&_netw_cacert, params->rootCA.pLoc);
 #else
-			LOTRACE_ERR("mbedtls_x509_crt_parse_file (CA Certificate): NOT SUPPORTED !");
+			LOTRACE_ERR_I("mbedtls_x509_crt_parse_file (CA Certificate): NOT SUPPORTED !");
 			return -1;
 #endif
 		}
@@ -459,7 +488,7 @@ int netw_setSecurity(Network *pNetwork, const LiveObjectsSecurityParams_t* param
 		LOTRACE_INF("CA Certificate loaded: OK");
 	}
 	else {
-		LOTRACE_DBG1("No CA Certificate");
+		LOTRACE_INF("No CA Certificate");
 	}
 
 	if ((params->deviceCert.pLoc) && (params->devicePrivateKey.pLoc)) {
@@ -472,7 +501,7 @@ int netw_setSecurity(Network *pNetwork, const LiveObjectsSecurityParams_t* param
 #if defined(MBEDTLS_FS_IO)
 			ret = mbedtls_x509_crt_parse_file(&_netw_clicert, params->deviceCert.pLoc);
 #else
-			LOTRACE_ERR("mbedtls_x509_crt_parse_file (Client Certificate): NOT SUPPORTED !");
+			LOTRACE_ERR_I("mbedtls_x509_crt_parse_file (Client Certificate): NOT SUPPORTED !");
 			return -1;
 #endif
 		}
@@ -493,7 +522,7 @@ int netw_setSecurity(Network *pNetwork, const LiveObjectsSecurityParams_t* param
 #if defined(MBEDTLS_FS_IO)
 			ret = mbedtls_pk_parse_keyfile(&_netw_pkey, params->devicePrivateKey.pLoc, _netw_passwd);
 #else
-			LOTRACE_ERR("mbedtls_pk_parse_keyfile (Private Key): NOT SUPPORTED !");
+			LOTRACE_ERR_I("mbedtls_pk_parse_keyfile (Private Key): NOT SUPPORTED !");
 			return -1;
 #endif
 		}
@@ -510,7 +539,7 @@ int netw_setSecurity(Network *pNetwork, const LiveObjectsSecurityParams_t* param
 		return ret;
 	}
 
-#ifdef MBEDTLS_VERIFY
+#if MBEDTLS_VERIFY
 	_netw_ssl_verify = true;
 
 	mbedtls_ssl_conf_verify(&_netw_conf, myCertVerify, NULL);
@@ -579,7 +608,7 @@ int netw_connect(Network* pNetwork, LiveObjectsNetConnectParams_t* params) {
 #endif
 	ret = f_netw_sock_connect(pNetwork, params->RemoteHostAddress, params->RemoteHostPort, params->TimeoutMs);
 	if (ret) {
-		LOTRACE_ERR("Failed to create TCP socket");
+		LOTRACE_ERR_I("Failed to create TCP socket");
 		return -1;
 	}
 	LOTRACE_INF("Connected to server %s:%d OK", params->RemoteHostAddress, params->RemoteHostPort);
@@ -590,21 +619,13 @@ int netw_connect(Network* pNetwork, LiveObjectsNetConnectParams_t* params) {
 		LOTRACE_INF("Set SSL/TLS ...");
 
 		//mbedtls_ssl_conf_read_timeout(&conf, params.timeout_ms);
-		mbedtls_ssl_conf_read_timeout(&_netw_conf, 30000);
+		mbedtls_ssl_conf_read_timeout(&_netw_conf, 60000);
 
-#ifdef MBEDTLS_TIMER
-		mbedtls_ssl_conf_handshake_timeout( &_netw_conf, 10000, 29000 );
+#if MBEDTLS_DTLS_TIMER && defined(MBEDTLS_SSL_PROTO_DTLS)
+		mbedtls_ssl_conf_handshake_timeout( &_netw_conf, MBEDTLS_DTLS_TIMER_MIN, MBEDTLS_DTLS_TIMER_MAX );
 #endif
 
 		mbedtls_ssl_conf_rng(&_netw_conf, mbedtls_ctr_drbg_random, &_netw_ctr_drbg);
-
-#if 0
-		if ((ret = mbedtls_ssl_set_hostname(&_netw_ssl, params->RemoteHostName)) != 0) {
-			LOTRACE_MBEDTLS_ERR(ret, "mbedtls_ssl_set_hostname");
-			netw_disconnect(pNetwork, 0);
-			return ret;
-		}
-#endif
 
 		if ((ret = mbedtls_ssl_setup(&_netw_ssl, &_netw_conf)) != 0) {
 			LOTRACE_MBEDTLS_ERR(ret, "mbedtls_ssl_setup");
@@ -614,7 +635,7 @@ int netw_connect(Network* pNetwork, LiveObjectsNetConnectParams_t* params) {
 
 		mbedtls_ssl_set_bio(&_netw_ssl, (void*) pNetwork, f_netw_sock_send, f_netw_sock_recv, f_netw_sock_recv_timeout);
 
-#ifdef MBEDTLS_TIMER
+#if MBEDTLS_TIMER
 		LOTRACE_INF("Set timer callbacks ...");
 		mbedtls_ssl_set_timer_cb( &_netw_ssl, &_netw_timer, f_timing_set_delay, f_timing_get_delay );
 #endif

@@ -269,26 +269,36 @@ int LO_json_add_item(const LiveObjectsD_Data_t* data_ptr, char *pbuf, uint32_t s
 		rc = snprintf(pcur, len, "%"PRIi32",", *((int32_t*) data_ptr->data_value));
 		break;
 	case LOD_TYPE_INT16:
-		rc = snprintf(pcur, len, "%"PRIi16",", *((int16_t*)data_ptr->data_value)); break;
+		rc = snprintf(pcur, len, "%"PRIi16",", *((int16_t*)data_ptr->data_value));
+		break;
 	case LOD_TYPE_INT8:
-		rc = snprintf(pcur, len, "%"PRIi8"," , *((int8_t*)data_ptr->data_value)); break;
+		rc = snprintf(pcur, len, "%"PRIi8"," , *((int8_t*)data_ptr->data_value));
+		break;
 	case LOD_TYPE_UINT32:
 		rc = snprintf(pcur, len, "%"PRIu32",", *((uint32_t*) data_ptr->data_value));
 		break;
 	case LOD_TYPE_UINT16:
-		rc = snprintf(pcur, len, "%"PRIu16",", *((uint16_t*)data_ptr->data_value)); break;
+		rc = snprintf(pcur, len, "%"PRIu16",", *((uint16_t*)data_ptr->data_value));
+		break;
 	case LOD_TYPE_UINT8:
-		rc = snprintf(pcur, len, "%"PRIu8"," , *((uint8_t*)data_ptr->data_value)); break;
-#ifdef ARDUINO_DTOSTR
+		rc = snprintf(pcur, len, "%"PRIu8"," , *((uint8_t*)data_ptr->data_value));
+		break;
+#if ARDUINO_DTOSTRE || ARDUINO_DTOSTRF
 	case LOD_TYPE_FLOAT:
 		if (len < 12) {
 			LOTRACE_ERR("failed - LOD_TYPE_FLOAT (Arduino) - Too short !");
 			return -1;;
 		}
 		else {
-			char* pc = dtostre(*((float*)data_ptr->data_value), (char*)pcur, 4, 0); //DTOSTRE_UPPERCASE);
+			char* pc;
+			double df = *((float*)data_ptr->data_value);
+#if ARDUINO_DTOSTRE
+			pc = dtostre(df, (char*)pcur, 4, 0); //DTOSTRE_UPPERCASE);
+#else
+			pc = dtostrf(df, 6, 3, (char*)pcur);
+#endif
 			if (pc != pcur) {
-				LOTRACE_ERR("failed - LOD_TYPE_FLOAT (Arduino) - dtostre");
+				LOTRACE_ERR("failed - LOD_TYPE_FLOAT (Arduino) - dtostr");
 				return -1;
 			}
 			rc = strlen(pcur);
@@ -305,7 +315,12 @@ int LO_json_add_item(const LiveObjectsD_Data_t* data_ptr, char *pbuf, uint32_t s
 			return -1;;
 		}
 		else {
-			char* pc = dtostre(*((double*)data_ptr->data_value), (char*)pcur, 4, 0); //DTOSTRE_UPPERCASE);
+			char* pc;
+#if ARDUINO_DTOSTRE
+			pc = dtostre(*((double*)data_ptr->data_value), (char*)pcur, 4, 0); //DTOSTRE_UPPERCASE);
+#else
+			pc = dtostrf(*((double*)data_ptr->data_value), 6, 3, (char*)pcur);
+#endif
 			if (pc != pcur) {
 				LOTRACE_ERR("failed - LOD_TYPE_DOUBLE (Arduino) - dtostre");
 				return -1;
@@ -318,7 +333,7 @@ int LO_json_add_item(const LiveObjectsD_Data_t* data_ptr, char *pbuf, uint32_t s
 		}
 		LOTRACE_WARN("LOD_TYPE_DOUBLE (Arduino) %s %s", data_ptr->data_name, pcur);
 		break;
-#else /* Not ARDUINO_DTOSTR */
+#else /* Not ARDUINO_DTOSTRE or Not ARDUINO_DTOSTRF */
 	case LOD_TYPE_FLOAT:
 		rc = snprintf(pcur, len, "%f,", *((float*) data_ptr->data_value));
 		break;
@@ -366,7 +381,7 @@ int LO_json_add_param(const LiveObjectsD_Data_t* data_ptr, char *pbuf, uint32_t 
 			rc = snprintf(pcur, len, "\"t\":\"u32\",\"v\":%u},", *((unsigned int*) data_ptr->data_value));
 			break;
 		case LOD_TYPE_FLOAT:
-#ifdef ARDUINO_DTOSTR
+#if ARDUINO_DTOSTRE || ARDUINO_DTOSTRF
 			strncpy(pcur, "\"t\":\"f64\",\"v\":", len);
 			rc = strlen(pcur);
 			if (rc != 14) {
@@ -381,10 +396,15 @@ int LO_json_add_param(const LiveObjectsD_Data_t* data_ptr, char *pbuf, uint32_t 
 					return -1;;
 				}
 				else {
+					char* pc;
 					double df = *((float*)data_ptr->data_value);
-					char* pc = dtostre(df, (char*)pcur, 4, 0); //DTOSTRE_UPPERCASE);
+#if ARDUINO_DTOSTRE
+					pc = dtostre(df, (char*)pcur, 4, 0); //DTOSTRE_UPPERCASE);
+#else
+					pc = dtostrf(df, 6, 3, (char*)pcur);
+#endif
 					if (pc != pcur) {
-						LOTRACE_NOTICE("failed - LOD_TYPE_FLOAT (Arduino) - dtostre");
+						LOTRACE_NOTICE("failed - LOD_TYPE_FLOAT (Arduino) - dtostr.");
 						return -1;
 					}
 					rc = strlen(pcur);
@@ -397,7 +417,7 @@ int LO_json_add_param(const LiveObjectsD_Data_t* data_ptr, char *pbuf, uint32_t 
 					strncpy(pcur, "},", len);
 				}
 			}
-#else /* Not ARDUINO_DTOSTR */
+#else /* Not ARDUINO_DTOSTRE  or Not ARDUINO_DTOSTRF */
 			rc = snprintf(pcur, len, "\"t\":\"f64\",\"v\":%f},", *((float*) data_ptr->data_value));
 #endif
 			break;
@@ -405,7 +425,7 @@ int LO_json_add_param(const LiveObjectsD_Data_t* data_ptr, char *pbuf, uint32_t 
 			rc = snprintf(pcur, len, "\"t\":\"str\",\"v\":\"%s\"},", (const char*) data_ptr->data_value);
 			break;
 		default:
-			LOTRACE_ERR("LO_json_add_param: failed -  type %d not implemented", data_ptr->data_value);
+			LOTRACE_ERR("LO_json_add_param: failed -  type %d not implemented", data_ptr->data_type);
 			return -1;
 		}
 		LOTRACE_DBG1("OK - type=%d=%s name=%s", data_ptr->data_type,

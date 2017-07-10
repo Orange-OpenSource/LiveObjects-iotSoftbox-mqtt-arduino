@@ -24,14 +24,20 @@
 #include "iotsoftbox-core/loc_sock.h"
 #include "iotsoftbox-core/netw_sock.h"
 
-#if defined(ARDUINO_ARCH_AVR)
+#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_SAMD)
+
+#define ARDUINO_ITF     1
 
 #define DNS_ENABLE   0
 
-#if defined(ARDUINO_CONN_GSM)
+#include "config/liveobjects_dev_params.h"
+
+#if (ARDUINO_CONN_ITF == 1)    /* GSM */
 #include <GSM.h>
-#elif defined(ARDUINO_CONN_ETH)
+#elif (ARDUINO_CONN_ITF == 2)  /* ETH1 */
 #include <Ethernet.h>
+#elif (ARDUINO_CONN_ITF == 3)  /* ETH2 */
+#include <Ethernet2.h>
 #else
 #error "No definition for interface"
 #endif
@@ -43,17 +49,17 @@
 #include <vmsock.h>
 #include <vmsys.h>
 
-#endif
+#endif /* ARDUINO_MEDIATEK*/
 
 #include <fcntl.h>
 #include <errno.h>
 
 
-#if defined(ARDUINO_ARCH_AVR)
+#if defined(ARDUINO_ITF)
 
-#if defined(ARDUINO_CONN_GSM)
+#if (ARDUINO_CONN_ITF == 1)                              /* GSM */
 static GSMClient      _LO_sock_client;
-#elif defined(ARDUINO_CONN_ETH)
+#elif (ARDUINO_CONN_ITF == 2) || (ARDUINO_CONN_ITF == 3) /* ETH1 or ETH2 */
 static EthernetClient _LO_sock_client;
 #endif
 
@@ -266,7 +272,7 @@ extern "C" void LO_sock_disconnect(socketHandle_t *pHdl) {
 #if defined(ARDUINO_MEDIATEK)
 			vm_closesocket(*pHdl);
 #endif
-#if defined(ARDUINO_ARCH_AVR)
+#if defined(ARDUINO_ITF)
 			_LO_sock_client.stop();
 #endif
 		}
@@ -377,7 +383,7 @@ extern "C" int LO_sock_connect(short retry, const char* remoteHostAddress, uint1
 	if (pHdl)
 	*pHdl = sock_fd;
 #endif
-#if  defined(ARDUINO_ARCH_AVR)
+#if  defined(ARDUINO_ITF)
 
 	if (_LO_sock_client.connected()) {
 		_LO_sock_client.stop();
@@ -437,17 +443,17 @@ extern "C" int LO_sock_send(socketHandle_t hdl, const char* buf_ptr) {
 		len -= ret;
 	}
 #endif
-#if defined(ARDUINO_ARCH_AVR)
+#if defined(ARDUINO_ITF)
 	if (hdl != &_LO_sock_client) {
 		LOTRACE_ERR("Invalid context %p", &_LO_sock_client);
 		return ( NETW_ERR_NET_INVALID_CONTEXT);
 	}
 	if (_LO_sock_client.connected()) {
-#ifdef ARDUINO_CONN_GSM
+#if (ARDUINO_CONN_ITF == 1) /* GSM */
 		_LO_sock_client.beginWrite(true);
 #endif
-		ret = _LO_sock_client.write(buf_ptr, len);
-#ifdef ARDUINO_CONN_GSM
+		ret = _LO_sock_client.write((uint8_t*)buf_ptr, len);
+#if (ARDUINO_CONN_ITF == 1) /* GSM */
 		_LO_sock_client.endWrite(true);
 #endif
 		if (ret != len) {
@@ -500,11 +506,11 @@ extern "C" int LO_sock_recv(socketHandle_t hdl, char* buf_ptr, int buf_len) {
 		return 0;
 	}
 #endif
-#if defined(ARDUINO_ARCH_AVR)
+#if defined(ARDUINO_ITF)
 	if (_LO_sock_client.connected()) {
 		ret = _LO_sock_client.available();
 		if (ret > 0) {
-			ret = _LO_sock_client.read(buf_ptr, buf_len);
+			ret = _LO_sock_client.read((uint8_t*)buf_ptr, buf_len);
 		}
 		else {
 			ret = NETW_ERR_SSL_WANT_READ;
@@ -523,7 +529,11 @@ extern "C" int LO_sock_recv(socketHandle_t hdl, char* buf_ptr, int buf_len) {
 extern "C" int LO_sock_read_line(socketHandle_t hdl, char* buf_ptr, int buf_len) {
 	int len = 0;
 	short retry = 0;
+#if defined(ARDUINO_MEDIATEK)
 	char cc;
+#else
+	int cc;
+#endif
 
 	if ((hdl < 0) || (buf_ptr == NULL) || (buf_len <= 0)) {
 		LOTRACE_ERR("LO_sock_recv: Invalid parameters - hdl=%d buf_ptr=%p buf_len=%d", hdl, buf_ptr, buf_len);
@@ -551,16 +561,21 @@ extern "C" int LO_sock_read_line(socketHandle_t hdl, char* buf_ptr, int buf_len)
 			return -1;
 		}
 #endif
-#if defined(ARDUINO_ARCH_AVR)
+#if defined(ARDUINO_ITF)
 		if (_LO_sock_client.connected()) {
 			cc = _LO_sock_client.read();
-			if (cc == 0) {
-				LOTRACE_INF("(len=%d) retry=%d -> ERROR_WOULD_BLOCK", len, retry);
-				if (++retry < 6) {
-					delay(200);
-					continue;
+			if ((cc == -1) || (cc == 0)) {
+				if (_LO_sock_client.connected()) {
+					if (++retry < 6) {
+						LOTRACE_INF("(len=%d) retry=%d -> ERROR_WOULD_BLOCK", len, retry);
+						delay(200);
+						continue;
+					}
+					LOTRACE_WARN("(len=%d) retry=%d -> ERROR_WOULD_BLOCK", len, retry);
+					return NETW_ERR_SSL_WANT_READ;
 				}
-				return NETW_ERR_SSL_WANT_READ;
+				LOTRACE_ERR("(len=%d) ->  ret=%d -> Closed by peer  !!", len, cc);
+				return NETW_ERR_NET_CONN_RESET;
 			}
 		}
 		else {

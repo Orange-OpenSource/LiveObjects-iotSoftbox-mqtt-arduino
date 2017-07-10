@@ -9,7 +9,10 @@ mbed-trace is distributed under the terms and conditions of the Apache 2.0 licen
 You may download the source code on the following website: https://github.com/ARMmbed/mbed-trace
 
 //-----//
-liveobjects_mbedtls_custom_config.h
+
+src/mbedtls/config.h
+src/mbedtls/_config_mdk.h
+src/mbedtls/_config_mega.h
 mbedtls_mbed_client_config.h 
 Copyright (C) 2006-2016, ARM Limited, All Rights Reserved
 
@@ -23,6 +26,7 @@ Copyright (c) 2014-2015 ARM Limited
 
 mbedtls is distributed under the terms and conditions of the Apache 2.0 license (https://github.com/ARMmbed/mbedtls/blob/development/apache-2.0.txt).
 You may download the source code on the following website: https://github.com/ARMmbed/mbedtls
+
 
 //-----//
 

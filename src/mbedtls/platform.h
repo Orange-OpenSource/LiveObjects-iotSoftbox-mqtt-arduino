@@ -20,12 +20,21 @@
  *
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
-#include <vmsys.h>
-
 #ifndef MBEDTLS_PLATFORM_H
 #define MBEDTLS_PLATFORM_H
 
 #if !defined(MBEDTLS_CONFIG_FILE)
+
+#if defined(ARDUINO_MTK_ONE)
+#include <vmsys.h>
+#elif defined(ARDUINO_ARCH_AVR)   // ARDUINO_AVR_MEGA2560 , ARDUINO_AVR_ADK, ..
+//#warning "mbedtls: ARDUINO_AVR_xxx"
+#elif defined(ARDUINO_ARCH_SAMD)  // M0_PRO
+//
+#else
+#error "No config file for mbedtls !"
+#endif
+
 #include "config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
@@ -66,7 +75,7 @@ extern "C" {
 #define MBEDTLS_PLATFORM_STD_FREE       free /**< Default free to use */
 #endif
 #if !defined(MBEDTLS_PLATFORM_STD_EXIT)
-#define MBEDTLS_PLATFORM_STD_EXIT      exit /**< Default free to use */
+#define MBEDTLS_PLATFORM_STD_EXIT      exit /**< Default exit to use */
 #endif
 #else /* MBEDTLS_PLATFORM_NO_STD_FUNCTIONS */
 #if defined(MBEDTLS_PLATFORM_STD_MEM_HDR)
@@ -87,7 +96,7 @@ extern "C" {
 #else
 /* For size_t */
 #include <stddef.h>
-extern void * (*mbedtls_calloc)( size_t n * size_t size );
+extern void * (*mbedtls_calloc)( size_t n, size_t size );
 extern void (*mbedtls_free)( void *ptr );
 
 /**
@@ -98,13 +107,34 @@ extern void (*mbedtls_free)( void *ptr );
  *
  * \return              0 if successful
  */
-int mbedtls_platform_set_calloc_free( void * (*calloc_func)( size_t * size_t ),
+int mbedtls_platform_set_calloc_free( void * (*calloc_func)( size_t, size_t ),
                               void (*free_func)( void * ) );
 #endif /* MBEDTLS_PLATFORM_FREE_MACRO && MBEDTLS_PLATFORM_CALLOC_MACRO */
 #else /* !MBEDTLS_PLATFORM_MEMORY */
+//#define mbedtls_free       free
+//#define mbedtls_calloc     calloc
+
+#if defined (ARDUINO_MTK_ONE)
 //OAB : ARDUINO-MEDIATEK
 #define mbedtls_free            vm_free
 #define mbedtls_calloc(n,l)     vm_calloc((n)*(l))
+#elif defined (ARDUINO_ARCH_AVR)  // ARDUINO_AVR_MEGA2560, ARDUINO_AVR_ADK, ...
+#define mbedtls_free            free
+#define mbedtls_calloc(n,l)     calloc(n,l)
+#elif defined (ARDUINO_ARCH_SAMD) // M0_PRO
+#if 1 // Call specific LiveObject memory functions : calloc, free
+void  LO_sys_mem_free( void * );
+void* LO_sys_mem_calloc(size_t n, size_t l);
+#define mbedtls_free(p)         LO_sys_mem_free(p)
+#define mbedtls_calloc(n,l)     LO_sys_mem_calloc(n,l)
+#else
+#define mbedtls_free            free
+#define mbedtls_calloc(n,l)     calloc(n,l)
+#endif
+#else
+#error "No ARCH to define mbedtls_calloc and mbedtls_free"
+#endif
+
 #endif /* MBEDTLS_PLATFORM_MEMORY && !MBEDTLS_PLATFORM_{FREE,CALLOC}_MACRO */
 
 /*

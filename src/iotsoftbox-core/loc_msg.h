@@ -19,30 +19,28 @@
 #include "liveobjects-client/LiveObjectsClient_Defs.h"
 
 #if LOC_FEATURE_MBEDTLS
-
 #include "mbedtls/config.h"
 #include "mbedtls/md5.h"
-
-typedef mbedtls_md5_context md5_context_t; // Context of MD5 (using MD5 algo in mbedtls)
-
-#else
-
-#warning "No MD5 implementation !!"
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+#if LOC_FEATURE_MBEDTLS
+typedef mbedtls_md5_context md5_context_t;  /* Context of MD5 (using MD5 algo in mbedtls) */
+#else
 typedef struct
 {
 	uint32_t total[2];          /*!< number of bytes processed  */
 	uint32_t state[4];          /*!< intermediate digest state  */
 	unsigned char buffer[64];   /*!< data block being processed */
 } md5_context_t;
-
 #endif
 
+#if LOM_PUSH_ASYNC
 #define LOM_PUSH_FLAG         1
+#endif
 
 /**
  * @brief Define an array of simple LiveObjects data elements
@@ -135,9 +133,8 @@ typedef struct {
 	int rsc_nb;                                        /*!< Number of elements in array */
 	LiveObjectsD_CallbackResourceNotify_t rsc_cb_ntfy; /*!< User callback function called to notify begin/end of transfer */
 	LiveObjectsD_CallbackResourceData_t rsc_cb_data;   /*!< User callback function called to notify that data can be read */
-#if LOM_PUSH_FLAG
+//LOM_PUSH_FLAG
 	uint8_t pushtoLOServer;
-#endif
 } LOMSetOfResources_t;
 
 /**

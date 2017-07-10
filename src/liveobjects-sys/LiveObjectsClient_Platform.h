@@ -33,8 +33,6 @@
 #define PRIi64    "ld"
 #endif
 
-#define ARDUINO_CONN_ETH     1
-
 #ifndef LOC_MQT_DUMP_STATIC_BUFFER_SIZE
 // see LOGP_MAX_MSG_SIZE defined in arduino_trace.cpp
 #define LOC_MQT_DUMP_STATIC_BUFFER_SIZE    ((250/3)-3)
@@ -48,8 +46,20 @@
 
 #if defined(ARDUINO_ARCH_MTK) || defined(ARDUINO_MTK_ONE)
 #define ARDUINO_MEDIATEK   1
-#elif defined(ARDUINO_ARCH_AVR)
-#define  ARDUINO_DTOSTR
+#define ARDUINO_BOARD      "MDK"
+#elif defined(ARDUINO_ARCH_AVR)  // ARDUINO_AVR_MEGA2560 , ARDUINO_AVR_ADK
+#define ARDUINO_DTOSTRE    1
+#if defined(ARDUINO_AVR_MEGA2560)
+#define ARDUINO_BOARD      "MEGA"
+#elif defined(ARDUINO_AVR_ADK)
+#define ARDUINO_BOARD      "ADK"
+#else
+#define ARDUINO_BOARD      "???"
+#endif
+#elif defined(ARDUINO_ARCH_SAMD) // M0 PRO
+#define ARDUINO_DTOSTRF    1
+#define ARDUINO_BOARD      "SAMD"
+#include "avr/dtostrf.h"
 #else
 #error "Unknown Arduino platform"
 #endif

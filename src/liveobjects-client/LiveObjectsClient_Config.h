@@ -33,8 +33,18 @@
  * - LOC_MQTT_DEF_PENDING_MSG_MAX  Max Number of pending MQTT Publish messages (default: 5 messages)
  * - LOC_MAX_OF_COMMAND_ARGS  Max Number of arguments in command (default: 5 arguments)
  * - LOC_MAX_OF_DATA_SET  Max Number of collected data streams (or also named 'data sets')  (default: 5 data streams)
+ * - LOC_MAX_OF_STATUS_SET  Max Number of status/info sets (default: 1 status set)
+ * - LOC_MAX_OF_PARSED_PARAMS Max Number of parsed parameters in a same received update param request (default: 5)
  * - LOM_JSON_BUF_SZ  Size (in bytes) of static JSON buffer used to encode the JSON payload to be sent (default: 1 K bytes)
  * - LOM_JSON_BUF_USER_SZ  Size (in bytes) of static JSON buffer used to encode a user JSON payload (default: 200 bytes)
+ *
+ *
+ * - LOM_SETOFDATA_STREAM_ID_SZ Max Size(in bytes) of Data Stream Id (default: 80 bytes)
+ * - LOM_SETOFDATA_MODEL_SZ Max Size(in bytes) of Data Model field (default: 80 bytes). It can be set to 0 : disabled.
+ * - LOM_SETOFDATA_TAGS_SZ Max Size(in bytes) of Data Tag field (default: 80 bytes). It can be set to 0 : disabled.
+ *
+ * - LOM_PUSH_ASYNC boolean to enable or not the asynchronous push call
+ * - LOM_MQUEUE boolean to use or not a message queue to publish message between user application and iotsoftbox-mqtt library.
  *
  */
 
@@ -119,6 +129,11 @@
 #define LOC_MAX_OF_STATUS_SET                1
 #endif
 
+#ifndef LOC_MAX_OF_PARSED_PARAMS
+#define LOC_MAX_OF_PARSED_PARAMS             5
+#endif
+
+
 #ifndef LOM_JSON_BUF_SZ
 #define LOM_JSON_BUF_SZ                      1024
 #endif
@@ -135,7 +150,7 @@
 #define LOM_SETOFDATA_STREAM_ID_SZ            80
 #endif
 #ifndef LOM_SETOFDATA_MODEL_SZ
-//#define LOM_SETOFDATA_MODEL_SZ                80
+#define LOM_SETOFDATA_MODEL_SZ                80
 #endif
 #ifndef LOM_SETOFDATA_TAGS_SZ
 #define LOM_SETOFDATA_TAGS_SZ                 80

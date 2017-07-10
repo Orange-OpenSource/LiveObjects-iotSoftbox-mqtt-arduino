@@ -19,16 +19,6 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
-#include "vmio.h"
-#include "vmstdlib.h"
-#include <vmchset.h>
-//#include "mtk.h"
-#define VM_IS_SUCCEEDED(x) (((x)>=0)?VM_TRUE:VM_FALSE)    /* Use this macro to determine if a VM_RESULT is a success or not. */
-#define SSL_CERT_PATH_MAX_LENGTH 100
-#define SSL_EXTERNAL_CERT_NUMBER    1
-#define SSL_BUF_SIZE 100
-#define FILE_PATH_SIZE 60
-
 #if !defined(MBEDTLS_CONFIG_FILE)
 #include "mbedtls/config.h"
 #else
@@ -36,6 +26,20 @@
 #endif
 
 #if defined(MBEDTLS_PK_PARSE_C)
+
+#if defined(ARDUINO_MTK_ONE)
+#include "vmio.h"
+#include "vmstdlib.h"
+#include <vmchset.h>
+#define VM_IS_SUCCEEDED(x) (((x)>=0)?VM_TRUE:VM_FALSE)    /* Use this macro to determine if a VM_RESULT is a success or not. */
+
+#define SSL_CERT_PATH_MAX_LENGTH 100
+#define SSL_EXTERNAL_CERT_NUMBER    1
+#define SSL_BUF_SIZE 100
+#define FILE_PATH_SIZE 60
+
+#endif
+
 
 #include "mbedtls/pk.h"
 #include "mbedtls/asn1.h"
@@ -65,7 +69,6 @@
 #if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
 #else
-1
 #include <stdlib.h>
 #define mbedtls_calloc    calloc
 #define mbedtls_free       free
@@ -86,7 +89,46 @@ static void mbedtls_zeroize( void *v, size_t n ) {
  */
 int mbedtls_pk_load_file( const char *path, unsigned char **buf, size_t *n )
 {
-    
+#if !defined(ARDUINO_MTK_ONE)
+    FILE *f;
+    long size;
+
+    if( ( f = fopen( path, "rb" ) ) == NULL )
+        return( MBEDTLS_ERR_PK_FILE_IO_ERROR );
+
+    fseek( f, 0, SEEK_END );
+    if( ( size = ftell( f ) ) == -1 )
+    {
+        fclose( f );
+        return( MBEDTLS_ERR_PK_FILE_IO_ERROR );
+    }
+    fseek( f, 0, SEEK_SET );
+
+    *n = (size_t) size;
+
+    if( *n + 1 == 0 ||
+        ( *buf = mbedtls_calloc( 1, *n + 1 ) ) == NULL )
+    {
+        fclose( f );
+        return( MBEDTLS_ERR_PK_ALLOC_FAILED );
+    }
+
+    if( fread( *buf, 1, *n, f ) != *n )
+    {
+        fclose( f );
+        mbedtls_free( *buf );
+        return( MBEDTLS_ERR_PK_FILE_IO_ERROR );
+    }
+
+    fclose( f );
+
+    (*buf)[*n] = '\0';
+
+    if( strstr( (const char *) *buf, "-----BEGIN " ) != NULL )
+        ++*n;
+
+    return( 0 );
+#else
     int ret = 0;
     long size;
 
@@ -151,45 +193,7 @@ int mbedtls_pk_load_file( const char *path, unsigned char **buf, size_t *n )
         ++*n;
 
     return( 0 );
-
-    // FILE *f;
-    // long size;
-
-    // if( ( f = fopen( path, "rb" ) ) == NULL )
-    //     return( MBEDTLS_ERR_PK_FILE_IO_ERROR );
-
-    // fseek( f, 0, SEEK_END );
-    // if( ( size = ftell( f ) ) == -1 )
-    // {
-    //     fclose( f );
-    //     return( MBEDTLS_ERR_PK_FILE_IO_ERROR );
-    // }
-    // fseek( f, 0, SEEK_SET );
-
-    // *n = (size_t) size;
-
-    // if( *n + 1 == 0 ||
-    //     ( *buf = mbedtls_calloc( 1, *n + 1 ) ) == NULL )
-    // {
-    //     fclose( f );
-    //     return( MBEDTLS_ERR_PK_ALLOC_FAILED );
-    // }
-
-    // if( fread( *buf, 1, *n, f ) != *n )
-    // {
-    //     fclose( f );
-    //     mbedtls_free( *buf );
-    //     return( MBEDTLS_ERR_PK_FILE_IO_ERROR );
-    // }
-
-    // fclose( f );
-
-    // (*buf)[*n] = '\0';
-
-    // if( strstr( (const char *) *buf, "-----BEGIN " ) != NULL )
-    //     ++*n;
-
-    // return( 0 );
+#endif
 }
 
 /*
@@ -1263,12 +1267,12 @@ int mbedtls_pk_parse_key( mbedtls_pk_context *pk,
 #endif /* MBEDTLS_PEM_PARSE_C */
 
     /*
-    * At this point we only know it's not a PEM formatted key. Could be any
-    * of the known DER encoded private key formats
-    *
-    * We try the different DER format parsers to see if one passes without
-    * error
-    */
+     * At this point we only know it's not a PEM formatted key. Could be any
+     * of the known DER encoded private key formats
+     *
+     * We try the different DER format parsers to see if one passes without
+     * error
+     */
 #if defined(MBEDTLS_PKCS12_C) || defined(MBEDTLS_PKCS5_C)
     if( ( ret = pk_parse_key_pkcs8_encrypted_der( pk, key, keylen,
                                                   pwd, pwdlen ) ) == 0 )

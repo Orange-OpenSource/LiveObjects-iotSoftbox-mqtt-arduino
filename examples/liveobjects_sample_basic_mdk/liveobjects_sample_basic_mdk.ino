@@ -29,6 +29,10 @@
 #include "liveobjects_iotsoftbox_api.h"
 #include "liveobjects_sample_basic_mdk.h"
 
+const char* appv_version   = "ARDUINO_MDK BASIC SAMPLE V04.14";
+
+//#define SMS_TEL  "06xxxxxxx"
+
 #define APP_FEATURE_LO_DATA                      1
 #define APP_FEATURE_LO_PARAMS                    1
 #define APP_FEATURE_LO_STATUS                    1
@@ -58,10 +62,6 @@ extern "C" void lo_trace_printf( const char  *format, ... );
 #endif
 
 #define PRINT_RAW(txt)   Serial.print(txt)
-
-//#define SMS_TEL  "06xxxxxxx"
-
-const char* appv_version   = "ARDUINO_MDK BASIC SAMPLE V03.02";
 
 uint8_t     appv_log_level = DBG_DFT_APP_LOG_LEVEL;
 

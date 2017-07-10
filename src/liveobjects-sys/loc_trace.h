@@ -26,14 +26,24 @@ extern "C" {
 
 
 
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) || defined(ARDUINO_ARCH_SAMD)
 
+#define LOTRACE_ERR_I(...)            lo_trace_log(1, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#if defined(ARDUINO_MEDIATEK)
 #define LOTRACE_ERR(...)              lo_trace_log(1, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define LOTRACE_WARN(...)             lo_trace_log(2, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define LOTRACE_NOTICE(...)           lo_trace_log(3, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define LOTRACE_INF(...)              lo_trace_log(4, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define LOTRACE_DBG1(...)             lo_trace_log(5, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #define LOTRACE_DBG2(...)             lo_trace_log(6, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#else
+#define LOTRACE_ERR(...)              ((void)0)
+#define LOTRACE_WARN(...)             ((void)0)
+#define LOTRACE_NOTICE(...)           ((void)0)
+#define LOTRACE_INF(...)              ((void)0)
+#define LOTRACE_DBG1(...)             ((void)0)
+#define LOTRACE_DBG2(...)             ((void)0)
+#endif
 
 #define LOTRACE_DBG_VERBOSE(...)      ((void)0)
 //#define LOTRACE_DBG_VERBOSE(...)      lo_trace_log(7, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
@@ -42,7 +52,7 @@ extern "C" {
 
 #else
 
-//#define LOTRACE_ERR(...)              lo_trace_log(1, ##__VA_ARGS__)
+#define LOTRACE_ERR_I(...)            lo_trace_log(1, ##__VA_ARGS__)
 #define LOTRACE_ERR(...)              ((void)0)
 #define LOTRACE_WARN(...)             ((void)0)
 #define LOTRACE_NOTICE(...)           ((void)0)
@@ -61,7 +71,7 @@ void lo_trace_init( int level );
 void lo_trace_level( int level );
 
 void lo_trace_log( int level,
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) || defined(ARDUINO_ARCH_SAMD)
     const char   *file,
     unsigned int line,
     const char   *function,

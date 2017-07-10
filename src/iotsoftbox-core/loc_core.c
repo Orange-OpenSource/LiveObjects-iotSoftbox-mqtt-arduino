@@ -233,7 +233,6 @@ static void mqtt_dump_hex(const unsigned char* p_buf, int len) {
 /* --------------------------------------------------------------------------------- */
 /*  */
 static void mqtt_dump_msg(const unsigned char* p_buf) {
-	int i;
 	const unsigned char* pc = p_buf;
 	unsigned char digit;
 	MQTTHeader header;
@@ -597,16 +596,26 @@ static int LOCC_processStatus(uint8_t force) {
 	for (status_hdl = 0; status_hdl < LOC_MAX_OF_STATUS_SET; status_hdl++) {
 		LOMSetOfStatus_t* p_satusSet = &_LOClient_Set_Status[status_hdl];
 		if ((p_satusSet->data_set.data_ptr) && (p_satusSet->data_set.data_nb)
-				&& ((force) || (p_satusSet->pushtoLOServer))) {
+				&& ((force)
+#if LOM_PUSH_FLAG
+						|| (p_satusSet->pushtoLOServer)
+#endif
+						)) {
 			const char* pMsg;
+#if LOM_PUSH_FLAG
 			LOTRACE_INF("force=%d  push=%d => PUBLISH STATUS ...", force,
 					p_satusSet->pushtoLOServer);
 			p_satusSet->pushtoLOServer = 1;
+#else
+			LOTRACE_INF("force=%d  => PUBLISH STATUS ...", force);
+#endif
 			pMsg = LO_msg_encode_status(0, &p_satusSet->data_set);
 			if (pMsg) {
 				rc = LOCC_MqttPublish(QOS0, "dev/info", pMsg);
 				if (rc == 0) {
+#if LOM_PUSH_FLAG
 					p_satusSet->pushtoLOServer = 0;
+#endif
 				}
 			}
 		}
@@ -621,7 +630,8 @@ static int LOCC_processStatus(uint8_t force) {
 
 static int LOCC_processResources(uint8_t force) {
 	int rc = 0;
-	if ((_LOClient_Set_Rsc.rsc_ptr) && ((force) || (_LOClient_Set_Rsc.pushtoLOServer))) {
+	if ((_LOClient_Set_Rsc.rsc_ptr) &&
+			((force) || (_LOClient_Set_Rsc.pushtoLOServer))) {
 		const char* pMsg;
 		LOTRACE_INF("force=%d  push=%d => PUBLISH RESOURCES ...", force,
 				_LOClient_Set_Rsc.pushtoLOServer);
@@ -688,7 +698,10 @@ static int LOCC_processGetRsc(void) {
 							break;
 						}
 					}
-
+#if !LOC_FEATURE_MBEDTLS
+					LOTRACE_WARN("MD5 WARNING: Not implemented => Force OK");
+					i = sizeof(output);
+#endif
 					if (_LOClient_Set_Rsc.rsc_cb_ntfy) {
 						_LOClient_Set_Rsc.rsc_cb_ntfy((i == sizeof(output)) ? 1 : 2,
 								_LOClient_Set_UpdatedRsc.ursc_obj_ptr, _LOClient_Set_UpdatedRsc.ursc_vers_old,
@@ -797,14 +810,22 @@ static int LOCC_processConfig(void) {
 			}
 		}
 
-		if ((_LOClient_cfg_first) || (_LOClient_Set_Params.pushtoLOServer)) {
+		if ((_LOClient_cfg_first)
+#if LOM_PUSH_FLAG
+				|| (_LOClient_Set_Params.pushtoLOServer)
+#endif
+				) {
+#if LOM_PUSH_FLAG
 			LOTRACE_INF("first=%d  push=%d => PUBLISH CFG parameters ...", _LOClient_cfg_first,
 					_LOClient_Set_Params.pushtoLOServer);
+#endif
 			pMsg = LO_msg_encode_params_all(0, &_LOClient_Set_Params.param_set, 0);
 			if (pMsg) {
 				rc = LOCC_MqttPublish(QOS0, "dev/cfg", pMsg);
 				if (rc == 0) {
+#if LOM_PUSH_FLAG
 					_LOClient_Set_Params.pushtoLOServer = 0;
+#endif
 					if (_LOClient_cfg_first) {
 #if 1
 						rc = LOCC_SubscibeTopic(TOPIC_CFG_UPD);
@@ -913,7 +934,7 @@ static int LOCC_setStreamId(uint8_t stream_prefix, LOMSetOfData_t* p_dataSet, co
 			p_dataSet->stream_id[len] = 0;
 	}
 	else {
-		int len = strlen(stream_id);
+		size_t len = strlen(stream_id);
 		memset(p_dataSet->stream_id, 0, sizeof(p_dataSet->stream_id));
 		memcpy(p_dataSet->stream_id, stream_id,
 				len < sizeof(p_dataSet->stream_id) ? len : sizeof(p_dataSet->stream_id));
@@ -1010,6 +1031,7 @@ static void LOCC_connectOK(void) {
 		LOTRACE_DBG1("Subcribe TOPIC_RSC_UPD, ret=%d", ret);
 	}
 #endif
+	(void)ret;
 }
 
 /* ================================================================================= */
@@ -1059,7 +1081,7 @@ int LiveObjectsClient_CheckApiKey(const char* apikey) {
 int LiveObjectsClient_Init(void* net_iface_handler) {
 	int rc;
 	if (LiveObjectsClient_CheckApiKey(LOC_CLIENT_DEV_API_KEY)) {
-		LOTRACE_ERR("Correct APIKEY is mandatory - apikey= '%s' ", LOC_CLIENT_DEV_API_KEY);
+		LOTRACE_ERR_I("Correct APIKEY is mandatory - apikey= '%s' ", LOC_CLIENT_DEV_API_KEY);
 		return -1;
 	}
 
@@ -1089,13 +1111,14 @@ int LiveObjectsClient_Init(void* net_iface_handler) {
 
 	rc = netw_init(&_LOClient_MQTTClient_network, net_iface_handler);
 	if (rc) {
-		LOTRACE_ERR("Error to initialize the network wrapper, rc=%d", rc);
+		LOTRACE_ERR_I("Error to initialize the network wrapper, rc=%d", rc);
 		return rc;
 	}
 
 	MQTTClientInit(&_LOClient_mqtt_ctx, &_LOClient_MQTTClient_network,
-	LOC_MQTT_DEF_COMMAND_TIMEOUT, _LOClient_mqtt_buffer_snd, LOC_MQTT_DEF_SND_SZ, _LOClient_mqtt_buffer_rcv,
-	LOC_MQTT_DEF_RCV_SZ);
+			LOC_MQTT_DEF_COMMAND_TIMEOUT,
+			_LOClient_mqtt_buffer_snd, LOC_MQTT_DEF_SND_SZ,
+			_LOClient_mqtt_buffer_rcv, LOC_MQTT_DEF_RCV_SZ);
 
 #if SECURITY_ENABLED && ((LOC_SERV_PORT  == 1884) || (LOC_SERV_PORT  == 8883))
 	rc = LOCC_EnableTLS();
@@ -1113,7 +1136,7 @@ int LiveObjectsClient_Init(void* net_iface_handler) {
 /*  */
 int LiveObjectsClient_SetDevId(const char* dev_id) {
 	if ((dev_id) &&(*dev_id)) {
-		int len = strlen(dev_id);
+		size_t len = strlen(dev_id);
 		memset(_LOClient_dev_id, 0, sizeof(_LOClient_dev_id));
 		memcpy(_LOClient_dev_id, dev_id, len < sizeof(_LOClient_dev_id) ? len : sizeof(_LOClient_dev_id));
 		_LOClient_dev_id[sizeof(_LOClient_dev_id) - 1] = 0;
@@ -1131,7 +1154,7 @@ int LiveObjectsClient_SetDevId(const char* dev_id) {
 /*  */
 int LiveObjectsClient_SetNameSpace(const char* name_space) {
 	if ((name_space) &&(*name_space)) {
-		int len = strlen(name_space);
+		size_t len = strlen(name_space);
 		memset(_LOClient_dev_name_space, 0, sizeof(_LOClient_dev_id));
 		memcpy(_LOClient_dev_name_space, name_space,
 				len < sizeof(_LOClient_dev_name_space) ? len : sizeof(_LOClient_dev_name_space));
@@ -1217,7 +1240,9 @@ int LiveObjectsClient_AttachStatus(const LiveObjectsD_Data_t* data_ptr, int32_t 
 	if (status_hdl < LOC_MAX_OF_STATUS_SET) {
 		_LOClient_Set_Status[status_hdl].data_set.data_ptr = data_ptr;
 		_LOClient_Set_Status[status_hdl].data_set.data_nb = data_nb;
+#if LOM_PUSH_FLAG
 		_LOClient_Set_Status[status_hdl].pushtoLOServer = 1;
+#endif
 
 		LOTRACE_INF("nb=%"PRIi32, data_nb);
 		return status_hdl;
@@ -1242,7 +1267,9 @@ int LiveObjectsClient_AttachData(uint8_t stream_prefix, const char* stream_id, c
 	}
 
 	if (data_hdl < LOC_MAX_OF_DATA_SET) {
-		int len;
+#if (LOM_SETOFDATA_MODEL_SZ > 0) || (LOM_SETOFDATA_TAGS_SZ > 0)
+		size_t len;
+#endif
 		LOMSetOfData_t* p_dataSet = &_LOClient_Set_Data[data_hdl];
 
 		int ret = LOCC_setStreamId(stream_prefix, p_dataSet, stream_id);
@@ -1250,7 +1277,6 @@ int LiveObjectsClient_AttachData(uint8_t stream_prefix, const char* stream_id, c
 			return -1;
 		}
 #if (LOM_SETOFDATA_MODEL_SZ > 0)
-		1
 		if ((model) &&(*model)) {
 			len = strlen(model);
 			memset(p_dataSet->model, 0, sizeof(p_dataSet->model));
@@ -1260,6 +1286,8 @@ int LiveObjectsClient_AttachData(uint8_t stream_prefix, const char* stream_id, c
 		else {
 			p_dataSet->model[0] = 0;
 		}
+#else
+		(void) model;
 #endif
 
 #if (LOM_SETOFDATA_TAGS_SZ > 0)
@@ -1272,6 +1300,8 @@ int LiveObjectsClient_AttachData(uint8_t stream_prefix, const char* stream_id, c
 		else {
 			p_dataSet->tags[0] = 0;
 		}
+#else
+		(void) tags;
 #endif
 		p_dataSet->gps_ptr = gps_ptr;
 
@@ -1445,7 +1475,7 @@ int LiveObjectsClient_Yield(int timeout_ms) {
 		}
 
 		if (netw_isLost(&_LOClient_MQTTClient_network)) {
-			LOTRACE_NOTICE("LOST !!", ret);
+			LOTRACE_NOTICE("LOST !!");
 			netw_disconnect(&_LOClient_MQTTClient_network, 0);
 			_LOClient_state_connected = 0;
 			ret = -1;
@@ -1599,6 +1629,7 @@ int LiveObjectsClient_CommandResponse(int32_t cid, const LiveObjectsD_Data_t* da
 				/* Publish now because it is LOM Client thread (negative response ...) */
 				return LOCC_MqttPublish(QOS0, "dev/cmd/res", p_msg);
 			}
+#if LOM_MQUEUE
 			/* otherwise put it in the queue */
 			if (LOCC_mqPut(p_msg) == 0) {
 				LOTRACE_INF("msg is put in queue !!");
@@ -1606,9 +1637,12 @@ int LiveObjectsClient_CommandResponse(int32_t cid, const LiveObjectsD_Data_t* da
 			}
 			LOTRACE_ERR("ERROR to put in queue - MEM_FREE %p x%x", p_msg, *p_msg);
 			MEM_FREE(p_msg);
+#else
+			LOTRACE_ERR("ERROR - not supported in this config");
+#endif
 		}
 	}
-#endif
+#endif /* LOC_FEATURE_LO_COMMANDS */
 	return -1;
 }
 
@@ -1672,7 +1706,7 @@ int LiveObjectsClient_Cycle(int timeout_ms) {
 #endif
 
 #if LOC_FEATURE_LO_PARAMS
-	/* Something to publish ?
+	/* Something to publish ?  */
 	/*  -- Config Parameters ? */
 	ret = LOCC_processConfig();
 #endif
