@@ -55,8 +55,9 @@ typedef enum {
  */
 typedef struct {
 	LiveObjectsD_Type_t data_type;  /*!< Type of user data */
-	const char* data_name;          /*!< Name of user data (used as the JSON name) */
-	void* data_value;               /*!< Pointer to the user data value */
+	const char*         data_name;  /*!< Name of user data (used as the JSON name) */
+	void*               data_value; /*!< Pointer to the user data (single value or array) */
+	int8_t              data_dim;   /*!< Number of values (array) */
 } LiveObjectsD_Data_t;
 
 /**
@@ -71,7 +72,7 @@ typedef struct {
  * @brief Define an user resource
  */
 typedef struct {
-	int rsc_uref;                 /*!< Resource user reference (maybe useful for user) */
+	uint32_t rsc_uref;            /*!< Resource user reference (maybe useful for user) */
 	const char* rsc_name;         /*!< Resource name */
 	const char* rsc_version_ptr;  /*!< Pointer to a c_string specifying the current resource Version */
 	uint16_t rsc_version_sz;      /*!< Max size in bytes of version c-string */

@@ -29,7 +29,7 @@ static const char* _LO_json_dataTypeStr[LOD_TYPE_MAX_NOT_USED] = {
 		"i32", "i16", "i8",
 		"u32", "u16", "u8",
 		"str", "bool",
-		"f64", "double" 
+		"f64", "double"
 		/*, "max" */
 };
 
@@ -75,7 +75,7 @@ int LO_objTypeCheck(void) {
 	int data_type;
 	int err = 0;
 	for (data_type = 1; data_type < LOD_TYPE_MAX_NOT_USED; data_type++) {
-		const char* p = LO_dataType(data_type);
+		const char* p = LO_dataType((LiveObjectsD_Type_t)data_type);
 		if (strcmp(_LO_json_dataTypeStr[data_type], p)) {
 			LOTRACE_ERR("objType %d - '%s' != '%s'", data_type, _LO_json_dataTypeStr[data_type], p);
 			err++;
@@ -88,7 +88,6 @@ int LO_objTypeCheck(void) {
 /*  */
 const char* LO_getDataTypeToStr(LiveObjectsD_Type_t data_type) {
 	if (data_type < LOD_TYPE_MAX_NOT_USED) {
-
 		return _LO_json_dataTypeStr[data_type];
 	}
 	return "BAD";
@@ -253,103 +252,108 @@ int LO_json_add_name_array(const char* name, const char* array, char *pbuf, uint
 /*  */
 int LO_json_add_item(const LiveObjectsD_Data_t* data_ptr, char *pbuf, uint32_t sz) {
 	int rc;
+	short i;
+	short dim;
+	char* data_value_ptr;
 	int len = sz - strlen(pbuf);
 	char* pcur = pbuf + strlen(pbuf);
 
+	if (data_ptr == NULL) {
+		LOTRACE_ERR("Invalid Arguments - data_ptr = NULL ");
+		return -1;
+	}
+	if ((data_ptr->data_name == NULL) || (data_ptr->data_value == NULL) || (data_ptr->data_dim <= 0)) {
+		LOTRACE_ERR("Invalid DataDef - name=%p  value=%p dim=%d", 
+			data_ptr->data_name, data_ptr->data_value, data_ptr->data_dim);
+		return -1;
+	}
+	
 	rc = snprintf(pcur, len, "\"%s\":", data_ptr->data_name);
 	if (rc < 0) {
 		LOTRACE_ERR("(%d, %s): failed, rc=%d", data_ptr->data_type, data_ptr->data_name, rc);
 		return -1;
 	}
-
 	len = sz - strlen(pbuf);
 	pcur = pbuf + strlen(pbuf);
-	switch (data_ptr->data_type) {
-	case LOD_TYPE_INT32:
-		rc = snprintf(pcur, len, "%"PRIi32",", *((int32_t*) data_ptr->data_value));
-		break;
-	case LOD_TYPE_INT16:
-		rc = snprintf(pcur, len, "%"PRIi16",", *((int16_t*)data_ptr->data_value));
-		break;
-	case LOD_TYPE_INT8:
-		rc = snprintf(pcur, len, "%"PRIi8"," , *((int8_t*)data_ptr->data_value));
-		break;
-	case LOD_TYPE_UINT32:
-		rc = snprintf(pcur, len, "%"PRIu32",", *((uint32_t*) data_ptr->data_value));
-		break;
-	case LOD_TYPE_UINT16:
-		rc = snprintf(pcur, len, "%"PRIu16",", *((uint16_t*)data_ptr->data_value));
-		break;
-	case LOD_TYPE_UINT8:
-		rc = snprintf(pcur, len, "%"PRIu8"," , *((uint8_t*)data_ptr->data_value));
-		break;
-#if ARDUINO_DTOSTRE || ARDUINO_DTOSTRF
-	case LOD_TYPE_FLOAT:
-		if (len < 12) {
-			LOTRACE_ERR("failed - LOD_TYPE_FLOAT (Arduino) - Too short !");
-			return -1;;
-		}
-		else {
-			char* pc;
-			double df = *((float*)data_ptr->data_value);
-#if ARDUINO_DTOSTRE
-			pc = dtostre(df, (char*)pcur, 4, 0); //DTOSTRE_UPPERCASE);
-#else
-			pc = dtostrf(df, 6, 3, (char*)pcur);
-#endif
-			if (pc != pcur) {
-				LOTRACE_ERR("failed - LOD_TYPE_FLOAT (Arduino) - dtostr");
-				return -1;
-			}
-			rc = strlen(pcur);
-			if (rc > len) {
-				LOTRACE_ERR("failed - LOD_TYPE_FLOAT (Arduino) - OVERFLOW !!");
-				return -1;;
-			}
-		}
-		LOTRACE_WARN("LOD_TYPE_FLOAT (Arduino) %s %s", data_ptr->data_name, pcur);
-		break;
-	case LOD_TYPE_DOUBLE:
-		if (len < 12) {
-			LOTRACE_ERR("failed - LOD_TYPE_DOUBLE (Arduino) - Too short !");
-			return -1;;
-		}
-		else {
-			char* pc;
-#if ARDUINO_DTOSTRE
-			pc = dtostre(*((double*)data_ptr->data_value), (char*)pcur, 4, 0); //DTOSTRE_UPPERCASE);
-#else
-			pc = dtostrf(*((double*)data_ptr->data_value), 6, 3, (char*)pcur);
-#endif
-			if (pc != pcur) {
-				LOTRACE_ERR("failed - LOD_TYPE_DOUBLE (Arduino) - dtostre");
-				return -1;
-			}
-			rc = strlen(pcur);
-			if (rc > len) {
-				LOTRACE_ERR("failed - LOD_TYPE_DOUBLE (Arduino) - OVERFLOW !!");
-				return -1;;
-			}
-		}
-		LOTRACE_WARN("LOD_TYPE_DOUBLE (Arduino) %s %s", data_ptr->data_name, pcur);
-		break;
-#else /* Not ARDUINO_DTOSTRE or Not ARDUINO_DTOSTRF */
-	case LOD_TYPE_FLOAT:
-		rc = snprintf(pcur, len, "%f,", *((float*) data_ptr->data_value));
-		break;
-	case LOD_TYPE_DOUBLE:
-		rc = snprintf(pcur, len, "%lf,", *((double*) data_ptr->data_value));
-		break;
-#endif
-	case LOD_TYPE_BOOL:
-		rc = snprintf(pcur, len, "%s,", *((uint8_t*) data_ptr->data_value) ? "true" : "false");
-		break;
-	case LOD_TYPE_STRING_C:
-		rc = snprintf(pcur, len, "\"%s\",", (const char*) data_ptr->data_value);
-		break;
-	default:
-		LOTRACE_ERR("failed  - unknown type %d", data_ptr->data_type);
+	if (len < 4) { /* at least 4 free bytes remmaining in buffer */
+		LOTRACE_ERR("(%d, %s): failed, free len = %d < 4", data_ptr->data_type, data_ptr->data_name, len);
 		return -1;
+	}
+	dim = data_ptr->data_dim;
+	if (dim > 1) {
+		*pcur++ = '[';
+		len--;
+	}
+	else if (dim <= 0) {
+		LOTRACE_ERR("(%d, %s): force dim=%d to 1", data_ptr->data_type, data_ptr->data_name, dim);
+		dim = 1;
+	}
+
+	data_value_ptr = (char*)data_ptr->data_value;
+	for (i=0;i<dim;i++) {
+		switch (data_ptr->data_type) {
+		case LOD_TYPE_INT32:
+			rc = snprintf(pcur, len, "%"PRIi32",", *((int32_t*) data_value_ptr));
+			if (dim > 1) data_value_ptr += sizeof(int32_t);
+			break;
+		case LOD_TYPE_INT16:
+			rc = snprintf(pcur, len, "%"PRIi16",", *((int16_t*)data_value_ptr));
+			if (dim > 1) data_value_ptr += sizeof(int16_t);			
+			break;
+		case LOD_TYPE_INT8:
+			rc = snprintf(pcur, len, "%"PRIi8"," , *((int8_t*)data_value_ptr));
+			if (dim > 1) data_value_ptr += sizeof(int8_t);
+			break;
+		case LOD_TYPE_UINT32:
+			rc = snprintf(pcur, len, "%"PRIu32",", *((uint32_t*)data_value_ptr));
+			if (dim > 1) data_value_ptr += sizeof(uint32_t);
+			break;
+		case LOD_TYPE_UINT16:
+			rc = snprintf(pcur, len, "%"PRIu16",", *((uint16_t*)data_value_ptr));
+			if (dim > 1) data_value_ptr += sizeof(uint16_t);
+			break;
+		case LOD_TYPE_UINT8:
+			rc = snprintf(pcur, len, "%"PRIu8"," , *((uint8_t*)data_value_ptr));
+			if (dim > 1) data_value_ptr += sizeof(uint8_t);
+			break;
+		case LOD_TYPE_FLOAT:
+			rc = snprintf(pcur, len, "%f,", *((float*)data_value_ptr));
+			if (dim > 1) data_value_ptr += sizeof(float);
+			break;
+		case LOD_TYPE_DOUBLE:
+			rc = snprintf(pcur, len, "%lf,", *((double*)data_value_ptr));
+			if (dim > 1) data_value_ptr += sizeof(double);
+			break;
+		case LOD_TYPE_BOOL:
+			rc = snprintf(pcur, len, "%s,", *((uint8_t*)data_value_ptr) ? "true" : "false");
+			if (dim > 1) data_value_ptr += sizeof(uint8_t);
+			break;
+		case LOD_TYPE_STRING_C:
+			rc = snprintf(pcur, len, "\"%s\",", (const char*)data_value_ptr);
+			if (dim > 1) data_value_ptr += sizeof(char*);
+			break;
+		default:
+			LOTRACE_ERR("failed  - unknown type %d", data_ptr->data_type);
+			return -1;
+		}
+		if (dim > 1) {
+			len = sz - strlen(pbuf);
+			pcur = pbuf + strlen(pbuf);
+			if (len < 2) { /* at least 2 free bytes remmaining in buffer */
+				LOTRACE_ERR("(%d, %s)[%d]: failed, free len = %d < 2", data_ptr->data_type, data_ptr->data_name, i, len);
+				return -1;
+			}		
+		}
+	}
+	if (dim > 1) {
+		pcur--;
+		if ((*pcur != ',')  || (len < 2)){
+			LOTRACE_ERR("(%d, %s): failed, unexpected char %c or free len = %d", data_ptr->data_type, data_ptr->data_name, *pcur, len);
+			return -1;
+		}
+		*pcur++ = ']';
+		*pcur++ = ',';
+		*pcur = 0;
 	}
 	LOTRACE_DBG1("OK - type=%d=%s name=%s", data_ptr->data_type, LO_getDataTypeToStr(data_ptr->data_type),
 			data_ptr->data_name);
@@ -381,45 +385,7 @@ int LO_json_add_param(const LiveObjectsD_Data_t* data_ptr, char *pbuf, uint32_t 
 			rc = snprintf(pcur, len, "\"t\":\"u32\",\"v\":%u},", *((unsigned int*) data_ptr->data_value));
 			break;
 		case LOD_TYPE_FLOAT:
-#if ARDUINO_DTOSTRE || ARDUINO_DTOSTRF
-			strncpy(pcur, "\"t\":\"f64\",\"v\":", len);
-			rc = strlen(pcur);
-			if (rc != 14) {
-				LOTRACE_NOTICE("(%d, %s): failed - bad length %d", data_ptr->data_type, data_ptr->data_name, rc);
-				return -1;
-			}
-			else {
-				pcur += rc;
-				len -= rc;
-				if (len < 12) {
-					LOTRACE_NOTICE("failed - LOD_TYPE_FLOAT (Arduino) - Too short !");
-					return -1;;
-				}
-				else {
-					char* pc;
-					double df = *((float*)data_ptr->data_value);
-#if ARDUINO_DTOSTRE
-					pc = dtostre(df, (char*)pcur, 4, 0); //DTOSTRE_UPPERCASE);
-#else
-					pc = dtostrf(df, 6, 3, (char*)pcur);
-#endif
-					if (pc != pcur) {
-						LOTRACE_NOTICE("failed - LOD_TYPE_FLOAT (Arduino) - dtostr.");
-						return -1;
-					}
-					rc = strlen(pcur);
-					if (rc > len) {
-						LOTRACE_NOTICE("failed - LOD_TYPE_FLOAT (Arduino) - OVERFLOW !!");
-						return -1;;
-					}
-					pcur += rc;
-					len -= rc;
-					strncpy(pcur, "},", len);
-				}
-			}
-#else /* Not ARDUINO_DTOSTRE  or Not ARDUINO_DTOSTRF */
 			rc = snprintf(pcur, len, "\"t\":\"f64\",\"v\":%f},", *((float*) data_ptr->data_value));
-#endif
 			break;
 		case LOD_TYPE_STRING_C:
 			rc = snprintf(pcur, len, "\"t\":\"str\",\"v\":\"%s\"},", (const char*) data_ptr->data_value);

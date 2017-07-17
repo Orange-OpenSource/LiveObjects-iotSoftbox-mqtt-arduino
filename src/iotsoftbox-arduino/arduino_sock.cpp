@@ -24,7 +24,7 @@
 #include "iotsoftbox-core/loc_sock.h"
 #include "iotsoftbox-core/netw_sock.h"
 
-#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_SAMD)
+#if defined(ARDUINO_ARCH_SAMD)
 
 #define ARDUINO_ITF     1
 

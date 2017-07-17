@@ -6,6 +6,8 @@ Visit [Datavenue Live Objects - complete guide](https://liveobjects.orange-busin
 
 And mainly the [Device mode](https://liveobjects.orange-business.com/doc/html/lo_manual.html#MQTT_MODE_DEVICE) section.
 
+Please, have a look to the [user manual](docs/liveobjects_starterkit_arduino_v1.1.pdf) to have a presentation of the library and to be more familiar with it.
+
 **We use the [Arduino IDE](https://www.arduino.cc/en/Main/Software) for all our operations.** Download and install it before going any further.
 
 ## Table of content
@@ -50,7 +52,6 @@ Note: The mbedtls implementation requires a board with the RAM size > = 16 K Byt
 * Install additional packages/libraries (to use your board and communication shield). 
 	* If you’re using the LinkIt One board, you will need:
 		* to download the Mediatek SDK. Procedure is described [here](https://docs.labs.mediatek.com/resource/linkit-one/en/getting-started/get-started-on-windows/install-the-arduino-ide-and-linkit-one-sdk)
-		* to patch the GSM library (see  in the directory iotsoftbox_mqtt_arduino/tools/gsm_patch)
 
 ### LiveObjects API Key
 

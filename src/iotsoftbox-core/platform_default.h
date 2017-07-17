@@ -10,7 +10,7 @@
  * @file  platform_default.h
  * @brief default platform definitions; only used for coding style
  */
- 
+
 #ifndef __platform_default_H_
 #define __platform_default_H_
 

@@ -461,6 +461,8 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 	for (idx = 0; idx < (token_cnt - 1); idx++) {
 		if ((tokens[idx].type == JSMN_STRING) && (tokens[idx].size == 1) && (2 == (tokens[idx].end - tokens[idx].start))
 				&& (!strncmp("id", payload_data + tokens[idx].start, 2))) {
+			int jw;
+			const LiveObjectsD_Resource_t* rsc_ptr;
 
 			LOTRACE_DBG1("TK[%d]: Found JSON TAG %.*s", idx, tokens[idx].end - tokens[idx].start,
 					payload_data + tokens[idx].start);
@@ -473,8 +475,7 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 				return RSC_RSP_ERR_INTERNAL_ERROR;
 			}
 			// found
-			int jw;
-			const LiveObjectsD_Resource_t* rsc_ptr = pSetRsc->rsc_ptr;
+			rsc_ptr = pSetRsc->rsc_ptr;
 			len = tokens[idx].end - tokens[idx].start;
 			for (jw = 0; jw < pSetRsc->rsc_nb; jw++, rsc_ptr++) {
 				if ((len == (int) strlen(rsc_ptr->rsc_name))
@@ -515,12 +516,13 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 		size--;
 
 		if ((len == 1) && !strncmp("m", payload_data + tokens[idx].start, len)) {
+			int ms;
 			if ((tokens[idx + 1].type != JSMN_OBJECT) || (tokens[idx + 1].size < 3)) {
 				LOTRACE_ERR("TK[%d] METADATA - unexpected token after \"m\" - type=%d size=%d", idx + 1,
 						tokens[idx + 1].type, tokens[idx + 1].size);
 				return RSC_RSP_ERR_INTERNAL_ERROR;
 			}
-			int ms = tokens[idx + 1].size;
+			ms = tokens[idx + 1].size;
 			LOTRACE_DBG1("TK[%d] --- METADATA - %d elements ...", idx, ms);
 
 			idx += 2;
@@ -794,7 +796,7 @@ int LO_msg_decode_params_req(const char* payload_data, uint32_t payload_len, con
 
 #if (MSG_DBG > 1)
 		if (len > 0) {
-			printf("   *** param name = %.*s\r\n", len, pc);
+			LOTRACE_PRINTF("   *** param name = %.*s\r\n", len, pc);
 		}
 #endif
 
@@ -822,12 +824,12 @@ int LO_msg_decode_params_req(const char* payload_data, uint32_t payload_len, con
 					}
 					else {
 #if (MSG_DBG > 1)
-						printf("   *** param value = %.*s\r\n", tokens[idx + 5].end - tokens[idx + 5].start,
+						LOTRACE_PRINTF("   *** param value = %.*s\r\n", tokens[idx + 5].end - tokens[idx + 5].start,
 								payload_data + tokens[idx + 5].start);
 #endif
 						ret = updateCnfParam(payload_data, &tokens[idx + 5], param_ptr, pSetCfg->param_callback);
 
-						if (pSetCfgUpdate->nb_of_params < LOC_MAX_OF_COMMAND_ARGS) {
+						if (pSetCfgUpdate->nb_of_params < LOC_MAX_OF_PARSED_PARAMS) {
 							pSetCfgUpdate->tab_of_param_ptr[pSetCfgUpdate->nb_of_params++] = param_ptr;
 						}
 					}

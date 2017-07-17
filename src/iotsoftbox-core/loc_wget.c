@@ -11,6 +11,10 @@
  * @brief Very simple and dirty implementation of HTTP Get
  */
 
+#include "liveobjects-client/LiveObjectsClient_Config.h"
+
+#if LOC_FEATURE_LO_RESOURCES
+
 #include "loc_wget.h"
 
 #include "loc_sock.h"
@@ -256,3 +260,5 @@ int LO_wget_data(char* pData, int len) {
 
 	return ret;
 }
+
+#endif /* LOC_FEATURE_LO_RESOURCES */

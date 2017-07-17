@@ -47,19 +47,6 @@
 #if defined(ARDUINO_ARCH_MTK) || defined(ARDUINO_MTK_ONE)
 #define ARDUINO_MEDIATEK   1
 #define ARDUINO_BOARD      "MDK"
-#elif defined(ARDUINO_ARCH_AVR)  // ARDUINO_AVR_MEGA2560 , ARDUINO_AVR_ADK
-#define ARDUINO_DTOSTRE    1
-#if defined(ARDUINO_AVR_MEGA2560)
-#define ARDUINO_BOARD      "MEGA"
-#elif defined(ARDUINO_AVR_ADK)
-#define ARDUINO_BOARD      "ADK"
-#else
-#define ARDUINO_BOARD      "???"
-#endif
-#elif defined(ARDUINO_ARCH_SAMD) // M0 PRO
-#define ARDUINO_DTOSTRF    1
-#define ARDUINO_BOARD      "SAMD"
-#include "avr/dtostrf.h"
 #else
 #error "Unknown Arduino platform"
 #endif

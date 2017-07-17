@@ -19,7 +19,7 @@
 #include "liveobjects-sys/LiveObjectsClient_Platform.h"
 #include "liveobjects-sys/loc_trace.h"
 
-#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_SAMD)
+#if defined(ARDUINO_ARCH_SAMD)
 #include <stdlib.h>
 #include <malloc.h>
 #endif
@@ -28,7 +28,7 @@
 /* Private Functions
  * -----------------
  */
-#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_SAMD)
+#if defined(ARDUINO_ARCH_SAMD)
 static size_t   _lo_sys_mem_info_arena;
 static size_t   _lo_sys_mem_info_uordblks;
 static size_t   _lo_sys_mem_max_block_size;
@@ -70,7 +70,7 @@ static void _LO_sys_threadExec(void const *argument) {
 /*  Initialization */
 void LO_sys_init(void) {
 	LOTRACE_ERR_I("LO_sys_init");
-#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_SAMD)
+#if defined(ARDUINO_ARCH_SAMD)
 	_lo_sys_mem_info_arena = 0;
 	_lo_sys_mem_info_uordblks = 0;
 	_lo_sys_mem_max_block_size = 0;
@@ -122,7 +122,7 @@ void LO_sys_threadCheck(void) {
 	LOTRACE_DBG1("LO_sys_threadCheck()");
 }
 
-#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_SAMD)
+#if defined(ARDUINO_ARCH_SAMD)
 
 void LO_sys_mem_info(void)
 {

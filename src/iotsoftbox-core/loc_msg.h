@@ -109,7 +109,7 @@ typedef struct {
 typedef struct {
 	int32_t cid;                      /*!< Correlation Identigfier */
 	int32_t nb_of_params;             /*!< Number of elements in tab_of_param_ptr */
-	const LiveObjectsD_Param_t* tab_of_param_ptr[LOC_MAX_OF_COMMAND_ARGS]; /*!< array of configuration parameters */
+	const LiveObjectsD_Param_t* tab_of_param_ptr[LOC_MAX_OF_PARSED_PARAMS]; /*!< array of configuration parameters */
 } LOMSetofUpdatedParams_t;
 
 /**

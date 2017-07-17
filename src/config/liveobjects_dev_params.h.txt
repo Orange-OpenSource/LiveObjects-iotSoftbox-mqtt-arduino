@@ -18,13 +18,7 @@
 
 // Set to 1 to enable TLS feature
 // (warning: check that LOC_SERV_PORT is the correct port in this case)
-#if defined(ARDUINO_ARCH_AVR)
-#define SECURITY_ENABLED                     0
-#elif defined(ARDUINO_ARCH_SAMD)
 #define SECURITY_ENABLED                     1
-#else
-#define SECURITY_ENABLED                     1
-#endif
 
 // Only used to overwrite the LiveOjects Server settings :
 // IP address, TCP port, Connection timeout in milliseconds.
@@ -46,26 +40,9 @@
 
 // Default LiveObjects device settings : name space and device identifier
 #define LOC_CLIENT_DEV_NAME_SPACE            "LiveObjectsSample"
+
 #if !LOC_CLIENT_USE_MAC_ADDR
-
-#if defined(ARDUINO_ARCH_AVR)
-#if defined(ARDUINO_AVR_MEGA2560)
-#define LOC_CLIENT_DEV_ID                    "LO_mega_dev01"
-#elif defined(ARDUINO_AVR_ADK)
-#define LOC_CLIENT_DEV_ID                    "LO_adk_dev01"
-#else
-#define LOC_CLIENT_DEV_ID                    "LO_avr_dev01"
-#endif
-#elif defined(ARDUINO_ARCH_SAMD)
-#define LOC_CLIENT_DEV_ID                    "LO_M0_Pro_dev01"
-#elif defined(ARDUINO_MTK_ONE)
-#define LOC_CLIENT_DEV_ID                    "LO_LinkIt_dev01"
-#elif defined(ARDUINO_ARCH_MTK)
-#define LOC_CLIENT_DEV_ID                    "LO_mdk_dev01"
-#else
 #define LOC_CLIENT_DEV_ID                    "LO_arduino_dev01"
-#endif
-
 #endif //LOC_CLIENT_USE_MAC_ADDR
 
 // Here, set your LiveObject Apikey. It is mandatory to run the application

@@ -318,14 +318,14 @@ static char _LO_msg_buf[LOM_JSON_BUF_SZ];
 /* --------------------------------------------------------------------------------- */
 /*  */
 #if LOC_FEATURE_LO_RESOURCES
-static const char* lib_rsc_res[] = { 
-	"OK", 
-	"INTERNAL_ERROR", 
-	"UNKNOWN_RESOURCE", 
+static const char* lib_rsc_res[] = {
+	"OK",
+	"INTERNAL_ERROR",
+	"UNKNOWN_RESOURCE",
 	"WRONG_SOURCE_VERSION",
-	"INVALID_RESOURCE", 
-	"NOT_AUTHORIZED", 
-	"BUSY" 
+	"INVALID_RESOURCE",
+	"NOT_AUTHORIZED",
+	"BUSY"
 };
 
 const char* LO_msg_encode_rsc_result(int32_t cid, LiveObjectsD_ResourceRespCode_t result) {
@@ -445,11 +445,11 @@ const char* LO_msg_encode_params_update(const LOMSetofUpdatedParams_t* pParamUpd
 /* --------------------------------------------------------------------------------- */
 /*  */
 #if LOC_FEATURE_LO_COMMANDS
-static const char* lib_res[] = { 
-	"Invalid", 
-	"Bad format", 
-	"Not supported", 
-	"Not processed" 
+static const char* lib_res[] = {
+	"Invalid",
+	"Bad format",
+	"Not supported",
+	"Not processed"
 };
 
 const char* LO_msg_encode_cmd_result(int32_t cid, int result) {

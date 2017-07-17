@@ -29,20 +29,20 @@ extern "C" {
 #define MSG_MUTEX_LOCK()    LO_sys_mutex_lock(1)
 #define MSG_MUTEX_UNLOCK()  LO_sys_mutex_unlock(1)
 
-void LO_sys_init(void);
+void    LO_sys_init(void);
 
-void LO_sys_threadRun(void);
+void    LO_sys_threadRun(void);
 
 uint8_t LO_sys_threadIsLiveObjectsClient(void);
 
-int LO_sys_threadStart(void const *argument);
+int     LO_sys_threadStart(void const *argument);
 
-void LO_sys_threadCheck();
+void    LO_sys_threadCheck(void);
 
 uint8_t LO_sys_mutex_lock(uint8_t idx);
-void LO_sys_mutex_unlock(uint8_t idx);
+void    LO_sys_mutex_unlock(uint8_t idx);
 
-void LO_sys_mutex_unlock(uint8_t idx);
+void    LO_sys_mutex_unlock(uint8_t idx);
 
 #if defined(__cplusplus)
 }

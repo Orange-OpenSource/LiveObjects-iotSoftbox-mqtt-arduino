@@ -16,21 +16,7 @@
 #include "liveobjects-Client/LiveObjectsClient_Config.h"
 #include "liveobjects-sys/LiveObjectsClient_Platform.h"
 
-#if defined(ARDUINO_ARCH_AVR) || defined(ARDUINO_ARCH_SAMD)
-
-#define ARDUINO_ITF     1
-
-#if (ARDUINO_CONN_ITF == 1)   /* GSM */
-#include <GSM.h>
-#elif (ARDUINO_CONN_ITF == 2) /* ETH1 */
-#include <Ethernet.h>
-#elif (ARDUINO_CONN_ITF == 3) /* ETH2 */
-#include <Ethernet2.h>
-#else
-#error "No definition for interface"
-#endif
-
-#elif defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK)
 
 /*
  * LinkIt/MediaTek Interfaces
