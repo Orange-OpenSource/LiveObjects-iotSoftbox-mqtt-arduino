@@ -93,6 +93,8 @@
 
 #define BYTE_PRINTED_SIZE        3
 
+#define APIKEY_LENGTH			 33
+
 /* --------------------------------------------------------------------------------- */
 /* Type definitions
  * ----------------
@@ -209,6 +211,14 @@ static uint16_t _LOClient_dump_mqtt_publish = 0;
 /* Private Functions
  * -----------------
  */
+
+static int apikeyconv(char * apikey, int size) {
+	if (size == APIKEY_LENGTH) {
+		snprintf(apikey, size, "%016llx%016llx", (unsigned long long)C_LOC_CLIENT_DEV_API_KEY_P1, (unsigned long long)C_LOC_CLIENT_DEV_API_KEY_P2);
+		return 0;
+	}
+	return -1;
+}
 
 /* --------------------------------------------------------------------------------- */
 /*  */
@@ -490,7 +500,13 @@ static int LOCC_MqttConnect(void) {
 	connectData.MQTTVersion = (unsigned char) (4);
 	connectData.clientID.cstring = mqtt_client_id;
 	connectData.username.cstring = LOC_MQTT_USER_NAME;
-	connectData.password.cstring = LOC_CLIENT_DEV_API_KEY;
+	char password[APIKEY_LENGTH];
+	ret = apikeyconv(password, APIKEY_LENGTH);
+	if (ret == 0) {
+		connectData.password.cstring = password;
+	} else {
+		LOTRACE_ERR("Apikeyconv failed, ret= %d", ret);
+	}
 
 #if 0
 	connectData.will.topicName.cstring = ...;
@@ -504,6 +520,7 @@ static int LOCC_MqttConnect(void) {
 	ret = MQTTConnect(&_LOClient_mqtt_ctx, &connectData);
 	if (ret) {
 		LOTRACE_ERR("MQTTConnect failed, rc= %d", ret);
+		LOTRACE_ERR("You might need to check your APIKEY\n");
 		netw_disconnect(&_LOClient_MQTTClient_network, 1);
 		return -1;
 	}
@@ -1087,8 +1104,17 @@ int LiveObjectsClient_CheckApiKey(const char* apikey) {
 /*  */
 int LiveObjectsClient_Init(void* net_iface_handler) {
 	int rc;
-	if (LiveObjectsClient_CheckApiKey(LOC_CLIENT_DEV_API_KEY)) {
-		LOTRACE_ERR("Correct APIKEY is mandatory - apikey= '%s' ", LOC_CLIENT_DEV_API_KEY);
+	char tmpApikey[APIKEY_LENGTH];
+
+	rc = apikeyconv(tmpApikey, APIKEY_LENGTH);
+
+	if (rc == -1) {
+		LOTRACE_ERR("Apikeyconv failed, rc= %d", rc);
+		return -1;
+	}
+
+	if (LiveObjectsClient_CheckApiKey(tmpApikey)) {
+		LOTRACE_ERR("Correct APIKEY is mandatory - apikey= '%s' ", tmpApikey);
 		return -1;
 	}
 

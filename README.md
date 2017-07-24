@@ -1,12 +1,16 @@
 # LiveObject IoT Client - IoTSoftBox-MQTT
 
+Please refers to the [Changelog](ChangeLog.md) to check the latest change and improvement.
+
+---
+
 This repository contains LiveObject IoT Client Library (used to connect devices to LiveObject Server from our partners).
 
 Visit [Datavenue Live Objects - complete guide](https://liveobjects.orange-business.com/doc/html/lo_manual.html).
 
 And mainly the [Device mode](https://liveobjects.orange-business.com/doc/html/lo_manual.html#MQTT_MODE_DEVICE) section.
 
-Please, have a look to the [user manual](docs/liveobjects_starterkit_arduino_v1.1.pdf) to have a presentation of the library and to be more familiar with it.
+Please, have a look to the [user manual](docs/liveobjects_starterkit_arduino_v1.2.pdf) to have a presentation of the library and to be more familiar with it.
 
 **We use the [Arduino IDE](https://www.arduino.cc/en/Main/Software) for all our operations.** Download and install it before going any further.
 
@@ -33,7 +37,7 @@ Please, have a look to the [user manual](docs/liveobjects_starterkit_arduino_v1.
 - [Application Control](#application-control)
 	- [Live Objects Portal](#live-objects-portal)
 	- [Live Objects Swagger](#live-objects-swagger)
-	
+
 
 ## Requirement
 
@@ -49,7 +53,7 @@ Note: The mbedtls implementation requires a board with the RAM size > = 16 K Byt
 ### Software
 
 * [Arduino IDE](https://www.arduino.cc/en/Main/Software). Tested with ARDUINO 1.8.1
-* Install additional packages/libraries (to use your board and communication shield). 
+* Install additional packages/libraries (to use your board and communication shield).
 	* If you’re using the LinkIt One board, you will need:
 		* to download the Mediatek SDK. Procedure is described [here](https://docs.labs.mediatek.com/resource/linkit-one/en/getting-started/get-started-on-windows/install-the-arduino-ide-and-linkit-one-sdk)
 
@@ -71,8 +75,31 @@ The config directory can be edited after the library installation.
 Once the library has been installed (see [below](#library-installation)), you will be able to customize the applications behaviors. The files are located in this folder `<Arduino user dir>\libraries\iotsoftbox_mqtt_arduino\src\config`.
 
 #### API key
+
 In the config directory of every examples, you will find 3 files to customize the behavior of the library.
 Edit this files to change some values, in particular the **LiveObjects API key** in `liveobjects_dev_params.h`.
+
+For security purpose, you will need to split the ApiKey in two parts.
+The first part is the first sixteen char of the ApiKey and the second one is the last sixteen char of the ApiKey.
+ An example is given below:
+
+```c
+/** Here, set your LiveObject Apikey. It is mandatory to run the application
+ *
+ * C_LOC_CLIENT_DEV_API_KEY_P1 must be the first sixteen char of the ApiKey
+ * C_LOC_CLIENT_DEV_API_KEY_P1 must be the last sixteen char of the ApiKey
+ *
+ * If your APIKEY is 0123456789abcdeffedcba9876543210 then
+ * it should look like this :
+ *
+ * #define C_LOC_CLIENT_DEV_API_KEY_P1			0x0123456789abcdef
+ * #define C_LOC_CLIENT_DEV_API_KEY_P2			0xfedcba9876543210
+ *
+ * */
+
+ #define C_LOC_CLIENT_DEV_API_KEY_P1			0x0123456789abcdef
+ #define C_LOC_CLIENT_DEV_API_KEY_P2			0xfedcba9876543210
+```
 
 #### Security
 From this file (`liveobjects_dev_params.h`) you can also disable TLS By switching `#define SECURITY_ENABLED 1` to 0.
