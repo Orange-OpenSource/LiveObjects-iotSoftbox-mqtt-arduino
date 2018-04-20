@@ -16,25 +16,25 @@
 #define SOCKET_DEFS_H_
 
 #include <Arduino.h>
-
 #include "liveobjects-sys/LiveObjectsClient_Platform.h"
 
-#if defined(ARDUINO_MEDIATEK)
+
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 #include <vmdatetime.h>
 #include <vmsock.h>
-#endif /* ARDUINO_ARCH_MTK  or  ARDUINO_MTK_ONE */
+#endif /* ARDUINO_ARCH_MTK or ARDUINO_MTK_ONE */
 
 #if defined(__cplusplus)
  extern "C" {
 #endif
 
 // Define the platform path to get the header file : MQTTPacket.h
-// used by the header filme : paho-mqttclient-embedded-c/MQTTClient.h
+// used by the header file : paho-mqttclient-embedded-c/MQTTClient.h
 #define MQTT_PACKET_HEADER_FILE   "MQTTPacket/MQTTPacket.h"
 
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 #define PRIsock   "d"
-// Socket handle 
+// Socket handle
 #define SOCKETHANDLE_NULL      ((socketHandle_t)-1)
 typedef int socketHandle_t;
 #else

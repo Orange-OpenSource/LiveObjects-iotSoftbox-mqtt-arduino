@@ -23,8 +23,6 @@
 
 //#define LOC_MQTT_DUMP_MSG                    0
 
-//#define LOC_FEATURE_MBEDTLS                  0
-
 //#define LOC_FEATURE_LO_STATUS                0
 //#define LOC_FEATURE_LO_PARAMS                0
 //#define LOC_FEATURE_LO_DATA                  0
@@ -55,6 +53,43 @@
 //#define LOM_SETOFDATA_TAGS_SZ                80
 
 //#define LOM_PUSH_ASYNC                       0
+//#define LOM_MQUEUE                           0
+
+#elif defined(ARDUINO_ARCH_AVR)
+
+#define LOC_MQTT_DUMP_MSG                    0
+
+//#define LOC_FEATURE_LO_STATUS                0
+//#define LOC_FEATURE_LO_PARAMS                0
+//#define LOC_FEATURE_LO_DATA                  0
+//#define LOC_FEATURE_LO_COMMANDS              0
+//#define LOC_FEATURE_LO_RESOURCES             0
+
+//#define LOC_MQTT_API_KEEPALIVEINTERVAL_SEC   30
+#define LOC_MQTT_DEF_COMMAND_TIMEOUT           60000
+
+#define LOC_MQTT_DEF_SND_SZ                  (250)
+#define LOC_MQTT_DEF_RCV_SZ                  (250)
+
+#define LOC_MQTT_DEF_TOPIC_NAME_SZ           12
+#define LOC_MQTT_DEF_DEV_ID_SZ               20
+#define LOC_MQTT_DEF_NAME_SPACE_SZ           20
+
+#define LOC_MQTT_DEF_PENDING_MSG_MAX         2
+#define LOC_MAX_OF_COMMAND_ARGS              2
+#define LOC_MAX_OF_DATA_SET                  1
+#define LOC_MAX_OF_STATUS_SET                1
+
+//#define LOC_MAX_OF_PARSED_PARAMS             5
+
+#define LOM_JSON_BUF_SZ                      200
+#define LOM_JSON_BUF_USER_SZ                 200
+
+#define LOM_SETOFDATA_STREAM_ID_SZ           40
+#define LOM_SETOFDATA_MODEL_SZ               0
+#define LOM_SETOFDATA_TAGS_SZ                0
+
+#define LOM_PUSH_ASYNC                       1
 //#define LOM_MQUEUE                           0
 
 #else

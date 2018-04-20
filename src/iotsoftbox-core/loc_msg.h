@@ -18,24 +18,10 @@
 #include "liveobjects-client/LiveObjectsClient_Config.h"
 #include "liveobjects-client/LiveObjectsClient_Defs.h"
 
-#if LOC_FEATURE_MBEDTLS
-#include "mbedtls/config.h"
-#include "mbedtls/md5.h"
-#endif
+#include "loc_md5.h"
 
 #if defined(__cplusplus)
 extern "C" {
-#endif
-
-#if LOC_FEATURE_MBEDTLS
-typedef mbedtls_md5_context md5_context_t;  /* Context of MD5 (using MD5 algo in mbedtls) */
-#else
-typedef struct
-{
-	uint32_t total[2];          /*!< number of bytes processed  */
-	uint32_t state[4];          /*!< intermediate digest state  */
-	unsigned char buffer[64];   /*!< data block being processed */
-} md5_context_t;
 #endif
 
 #if LOM_PUSH_ASYNC
@@ -145,9 +131,9 @@ typedef struct {
 typedef struct {
 	int32_t ursc_cid;                    /*!< Correlation Id of the current transfer */
 	const LiveObjectsD_Resource_t* ursc_obj_ptr;       /*!< Resource to update */
-	char ursc_vers_old[10];              /*!< Old version sent by the LiveObbject platform */
-	char ursc_vers_new[10];              /*!< New version sent by the LiveObbject platform */
-	unsigned char ursc_md5[16];          /*!< MD5 */
+	char ursc_vers_old[10];              /*!< Old version sent by the LiveObjects platform */
+	char ursc_vers_new[10];              /*!< New version sent by the LiveObjects platform */
+	unsigned char ursc_md5[16];          /*!< MD5 given by the LiveObjects platform */
 	uint32_t ursc_size;                  /*!< Size of the resource to be transfered in device */
 	char ursc_uri[80];                   /*!< URI to get the resource */
 
@@ -155,7 +141,7 @@ typedef struct {
 	uint8_t ursc_retry;                  /*!< Count the number to (re)connect to the HTTP server */
 	uint32_t ursc_offset;                /*!< Offset in the current transfer of resource */
 
-	md5_context_t md5_ctx;               /*!< Conetext of MAD5 (using MD5 algo in mbedtls) */
+	md5_context_t md5_ctx;               /*!< Context of MD5 algorithm */
 
 } LOMSetOfUpdatedResource_t;
 

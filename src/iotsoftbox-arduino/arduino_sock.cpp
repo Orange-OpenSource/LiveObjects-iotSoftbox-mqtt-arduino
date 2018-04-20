@@ -13,8 +13,8 @@
  */
 
 #include <Arduino.h>
-
 #include "liveobjects-client/LiveObjectsClient_Config.h"
+#include "config/liveobjects_dev_params.h"
 
 #if (LOC_FEATURE_LO_RESOURCES)
 
@@ -26,48 +26,43 @@
 
 #if defined(ARDUINO_ARCH_SAMD)
 
-#define ARDUINO_ITF     1
-
-#define DNS_ENABLE   0
-
+#define ARDUINO_ITF     4
+#define DNS_ENABLE   1
 #include "config/liveobjects_dev_params.h"
-
 #if (ARDUINO_CONN_ITF == 1)    /* GSM */
 #include <GSM.h>
+static GSMClient      _LO_sock_client;
 #elif (ARDUINO_CONN_ITF == 2)  /* ETH1 */
 #include <Ethernet.h>
+static EthernetClient _LO_sock_client;
 #elif (ARDUINO_CONN_ITF == 3)  /* ETH2 */
 #include <Ethernet2.h>
+static EthernetClient _LO_sock_client;
 #else
 #error "No definition for interface"
 #endif
 
-#elif defined(ARDUINO_MEDIATEK)
+#elif defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 
 #define DNS_ENABLE   1
-
 #include <vmsock.h>
 #include <vmsys.h>
 
-#endif /* ARDUINO_MEDIATEK*/
+#elif (ARDUINO_CONN_ITF==4)
+
+#define DNS_ENABLE   0
+#include <HeraclesGsmModem.h>
+extern HeraclesGsmModem modem;
+static HeraclesGsmModem::GsmClient _LO_sock_client(modem, 1, false);
+
+#endif /* ARDUINO with external interface*/
+
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 
 #include <fcntl.h>
 #include <errno.h>
 
-
-#if defined(ARDUINO_ITF)
-
-#if (ARDUINO_CONN_ITF == 1)                              /* GSM */
-static GSMClient      _LO_sock_client;
-#elif (ARDUINO_CONN_ITF == 2) || (ARDUINO_CONN_ITF == 3) /* ETH1 or ETH2 */
-static EthernetClient _LO_sock_client;
-#endif
-
-#endif
-
-
 static const char* sock_error_name(int err) {
-#if defined(ARDUINO_MEDIATEK)
 	switch (err) {
 		case VM_E_SOC_ERROR :             return "VM_E_SOC_ERROR";
 		case VM_E_SOC_WOULDBLOCK :        return "VM_E_SOC_WOULDBLOCK  not done yet";
@@ -91,14 +86,12 @@ static const char* sock_error_name(int err) {
 
 	}
 	return "Unknown";
-#else
-	return "not_yet";
-#endif
 }
+#endif
 
 /* --------------------------------------------------------------------------------- */
 /*  */
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 static int sock_would_block(int sock_fd) {
 	/*
 	 * Never return 'WOULD BLOCK' on a non-blocking socket
@@ -250,7 +243,7 @@ int LO_sock_dnsSetFQDN(const char* domain_name, const char* ip_address) {
 #endif
 		}
 
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 		_dns_result.address[0] = inet_addr(ip_address);
 		if (_dns_result.address[0]) {
 			_dns_resolved = 2;
@@ -269,10 +262,10 @@ int LO_sock_dnsSetFQDN(const char* domain_name, const char* ip_address) {
 extern "C" void LO_sock_disconnect(socketHandle_t *pHdl) {
 	if (pHdl) {
 		if (*pHdl != SOCKETHANDLE_NULL) {
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 			vm_closesocket(*pHdl);
 #endif
-#if defined(ARDUINO_ITF)
+#if defined(ARDUINO_ITF) || (ARDUINO_CONN_ITF==4)
 			_LO_sock_client.stop();
 #endif
 		}
@@ -283,9 +276,9 @@ extern "C" void LO_sock_disconnect(socketHandle_t *pHdl) {
 /* --------------------------------------------------------------------------------- */
 /*  */
 extern "C" int LO_sock_connect(short retry, const char* remoteHostAddress, uint16_t remoteHostPort, socketHandle_t *pHdl) {
-	int i;
 	int ret;
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
+    int i;
 	int sock_fd;
 	SOCKADDR_IN t_addr_in = {0};
 	uint32_t t_ai_addrlen; /* Length of socket address. */
@@ -383,7 +376,7 @@ extern "C" int LO_sock_connect(short retry, const char* remoteHostAddress, uint1
 	if (pHdl)
 	*pHdl = sock_fd;
 #endif
-#if  defined(ARDUINO_ITF)
+#if  defined(ARDUINO_ITF) || (ARDUINO_CONN_ITF==4)
 
 	if (_LO_sock_client.connected()) {
 		_LO_sock_client.stop();
@@ -392,9 +385,11 @@ extern "C" int LO_sock_connect(short retry, const char* remoteHostAddress, uint1
 
 	ret = _LO_sock_client.connect(remoteHostAddress, remoteHostPort);
 	if (ret == 1) {
+		LOTRACE_INF("Connected");
 		ret = 0;
 	}
 	else {
+		LOTRACE_INF("Failed");
 		ret = -1;
 	}
 	if (pHdl)
@@ -415,7 +410,7 @@ extern "C" int LO_sock_send(socketHandle_t hdl, const char* buf_ptr) {
 	len = strlen(buf_ptr);
 
 	LOTRACE_DBG1("len=%d\r\n%s", len, buf_ptr);
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 	while (len > 0) {
 		ret = (int) vm_send(hdl, pc, len, 0);
 		if (ret < 0) {
@@ -443,7 +438,7 @@ extern "C" int LO_sock_send(socketHandle_t hdl, const char* buf_ptr) {
 		len -= ret;
 	}
 #endif
-#if defined(ARDUINO_ITF)
+#if defined(ARDUINO_ITF) || (ARDUINO_CONN_ITF==4)
 	if (hdl != &_LO_sock_client) {
 		LOTRACE_ERR("Invalid context %p", &_LO_sock_client);
 		return ( NETW_ERR_NET_INVALID_CONTEXT);
@@ -477,24 +472,9 @@ extern "C" int LO_sock_recv(socketHandle_t hdl, char* buf_ptr, int buf_len) {
 		LOTRACE_ERR("Invalid parameters - hdl=%d buf_ptr=%p buf_len=%d", hdl, buf_ptr, buf_len);
 		return -1;
 	}
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 	ret = (int) vm_recv(hdl, buf_ptr, buf_len, 0);
 	if (ret < 0) {
-#if 0
-		if( sock_would_block( _netw_socket ) != 0 ) {
-			LOTRACE_INF("(_netw_socket=%d len=%x) ret=%d x%x", _netw_socket, len, ret, MBEDTLS_ERR_SSL_WANT_READ);
-			return( MBEDTLS_ERR_SSL_WANT_READ );
-		}
-		if( errno == EINTR ) {
-			LOTRACE_INF("(ctx=%p _netw_socket=%d len=%x) ret=%d x%x", _netw_socket, len, ret, MBEDTLS_ERR_SSL_WANT_READ);
-			return( MBEDTLS_ERR_SSL_WANT_READ );
-		}
-		if( errno == EPIPE || errno == ECONNRESET ) {
-			_netw_bSockState |= 0x02;
-			LOTRACE_ERR("(_netw_socket=%d len=%x) ret=%d errno=%d x%x",_netw_socket, len, ret, errno, MBEDTLS_ERR_NET_CONN_RESET);
-			return( MBEDTLS_ERR_NET_CONN_RESET );
-		}
-#endif
 		LOTRACE_ERR("(len=%d) ret=%d errno=%d - %s", buf_len, ret, errno, sock_error_name(ret));
 		return -1;
 	}
@@ -506,14 +486,14 @@ extern "C" int LO_sock_recv(socketHandle_t hdl, char* buf_ptr, int buf_len) {
 		return 0;
 	}
 #endif
-#if defined(ARDUINO_ITF)
+#if defined(ARDUINO_ITF) || (ARDUINO_CONN_ITF==4)
 	if (_LO_sock_client.connected()) {
 		ret = _LO_sock_client.available();
 		if (ret > 0) {
 			ret = _LO_sock_client.read((uint8_t*)buf_ptr, buf_len);
 		}
 		else {
-			ret = NETW_ERR_SSL_WANT_READ;
+			ret = NETW_ERR_NET_CONN_RESET;
 		}
 	}
 	else {
@@ -529,7 +509,7 @@ extern "C" int LO_sock_recv(socketHandle_t hdl, char* buf_ptr, int buf_len) {
 extern "C" int LO_sock_read_line(socketHandle_t hdl, char* buf_ptr, int buf_len) {
 	int len = 0;
 	short retry = 0;
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 	char cc;
 #else
 	int cc;
@@ -542,7 +522,7 @@ extern "C" int LO_sock_read_line(socketHandle_t hdl, char* buf_ptr, int buf_len)
 
 	cc = 0;
 	while (1) {
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 		int ret = (int) vm_recv(hdl, &cc, 1, 0);
 		if (ret < 0) {
 			LOTRACE_ERR("(1) (len=%d/%d) -> ERROR ret=%d errno=%d - %s", len, buf_len, ret, errno,
@@ -561,18 +541,18 @@ extern "C" int LO_sock_read_line(socketHandle_t hdl, char* buf_ptr, int buf_len)
 			return -1;
 		}
 #endif
-#if defined(ARDUINO_ITF)
+#if defined(ARDUINO_ITF) || (ARDUINO_CONN_ITF==4)
 		if (_LO_sock_client.connected()) {
 			cc = _LO_sock_client.read();
 			if ((cc == -1) || (cc == 0)) {
 				if (_LO_sock_client.connected()) {
-					if (++retry < 6) {
+					if (++retry < 15) {
 						LOTRACE_INF("(len=%d) retry=%d -> ERROR_WOULD_BLOCK", len, retry);
 						delay(200);
 						continue;
 					}
 					LOTRACE_WARN("(len=%d) retry=%d -> ERROR_WOULD_BLOCK", len, retry);
-					return NETW_ERR_SSL_WANT_READ;
+					return NETW_ERR_NET_CONN_RESET;
 				}
 				LOTRACE_ERR("(len=%d) ->  ret=%d -> Closed by peer  !!", len, cc);
 				return NETW_ERR_NET_CONN_RESET;

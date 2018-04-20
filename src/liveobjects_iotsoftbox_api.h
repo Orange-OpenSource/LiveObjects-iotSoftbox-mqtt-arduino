@@ -14,13 +14,11 @@
  * @brief
  *
  */
+ 
+#ifdef CLIENT_DEV_API_KEY_P2
+#error ok
+#endif
 
 #include "liveobjects-client/LiveObjectsClient_Config.h"
 #include "liveobjects-client/LiveObjectsClient_Defs.h" 
 #include "liveobjects-client/LiveObjectsClient_Core.h"
-#include "liveobjects-client/LiveObjectsClient_Security.h"
-
-#if LOC_FEATURE_MBEDTLS
-#include "mbedtls/net.h"
-#endif
-

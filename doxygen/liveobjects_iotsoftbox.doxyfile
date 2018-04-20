@@ -699,7 +699,6 @@ RECURSIVE              = YES
 EXCLUDE_PATTERNS       = */lib/*
 EXCLUDE_PATTERNS       += */examples/*
 EXCLUDE_PATTERNS       += */platforms/*
-EXCLUDE_PATTERNS       += */mbedtls/*
 EXCLUDE_PATTERNS       += */paho.mqtt.embedded-c/*
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or

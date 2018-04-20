@@ -28,13 +28,10 @@
 #include "liveobjects-sys/LiveObjectsClient_Platform.h"
 #include "platform_default.h"
 
-#define HTTP_USER_AGENT              "IotSoftbox-mqtt 1.0 (mbed)"
+#define HTTP_USER_AGENT              "IotSoftbox"
 
-#define HTTP_HD_Server               "Server:"
-#define HTTP_HD_CONTENT_TYPE         "Content-Type:"
 #define HTTP_HD_CONTENT_LENGTH       "Content-Length:"
 #define HTTP_HD_CONTENT_RANGE        "Content-Range:"
-#define HTTP_HD_APPLICATION_CONTEXT  "X-Application-Context:"
 
 static socketHandle_t _wget_sock_hdl;
 static char _wget_buffer[400];
@@ -46,10 +43,8 @@ static void wget_build_get_query(char* buf_ptr, int buf_len, const char* pURL, c
 	char* pc = buf_ptr;
 	const char *tpl = "GET /%s HTTP/1.0\r\n"
 			"Host: %s\r\n"
-#ifdef HTTP_USER_AGENT
 			"User-Agent: " HTTP_USER_AGENT "\r\n"
-#endif
-	;
+			"Connection: keep-alive\r\n";
 
 	if (pURL[0] == '/') {
 		pURL = pURL + 1;
@@ -123,8 +118,8 @@ static int wget_query(const char* pURL, const char* pHost, uint32_t rsc_size, ui
 			pc++;
 			LOTRACE_DBG1("value after ':' =  %s", pc);
 			if (!strncasecmp(_wget_buffer, HTTP_HD_CONTENT_LENGTH, strlen(HTTP_HD_CONTENT_LENGTH))) {
-				ret = sscanf(pc, "%"PRIu32, &http_content_length);
-				LOTRACE_DBG1("data len=%"PRIu32" {%s}", http_content_length, _wget_buffer);
+				ret = sscanf(pc, "%" SCNu32, &http_content_length);
+				LOTRACE_DBG1("data len=%" PRIu32 " {%s}", http_content_length, _wget_buffer);
 			}
 			else if (!strncasecmp(_wget_buffer, HTTP_HD_CONTENT_RANGE, strlen(HTTP_HD_CONTENT_RANGE))) {
 				LOTRACE_INF(" ---- byte range %s", pc);
@@ -176,7 +171,7 @@ int LO_wget_start(const char* uri, uint32_t rsc_size, uint32_t rsc_offset) {
 				rsc_offset);
 		return -1;
 	}
-	LOTRACE_INF("uri='%s' rsc_size=%"PRIu32" rsc_offset=%"PRIu32" ....", uri, rsc_size, rsc_offset);
+	LOTRACE_INF("uri='%s' rsc_size=%"PRIu32" rsc_offset=%"PRIu32" ...", uri, rsc_size, rsc_offset);
 
 	if (strncasecmp(pc, "http", 4)) {
 		LOTRACE_ERR("URI ERROR - expected http");
@@ -202,7 +197,7 @@ int LO_wget_start(const char* uri, uint32_t rsc_size, uint32_t rsc_offset) {
 		ps = ++pc;
 		while ((*pc != '/') && (*pc != 0))
 			pc++;
-		if (sscanf(ps, "%hu", &host_port) != 1) {
+		if (sscanf(ps, "%" SCNu16, &host_port) != 1) {
 			LOTRACE_ERR("ERROR - could not find port");
 			return -1;
 		}
@@ -212,7 +207,7 @@ int LO_wget_start(const char* uri, uint32_t rsc_size, uint32_t rsc_offset) {
 		return -1;
 	}
 
-	LOTRACE_DBG1("Connect to %s:%d ....", host_name, host_port);
+	LOTRACE_DBG1("Connect to %s:%d ...", host_name, host_port);
 	ret = LO_sock_connect(2, host_name, host_port, &_wget_sock_hdl);
 	if (ret < 0) {
 		LOTRACE_ERR("Error while connecting to %s:%d", host_name, host_port);
@@ -239,7 +234,7 @@ int LO_wget_data(char* pData, int len) {
 		return -1;
 	}
 
-	LOTRACE_DBG1("(len=%d) ....", len);
+	LOTRACE_DBG1("(len=%d) ...", len);
 
 	ret = LO_sock_recv(_wget_sock_hdl, pData, len);
 	if (ret < 0) {
@@ -249,12 +244,12 @@ int LO_wget_data(char* pData, int len) {
 	}
 
 	if (ret == 0) {
-		LOTRACE_ERR("(len=%d) ->  ret=0 !!", len);
+		LOTRACE_ERR("(len=%d) -> ret=0 !!", len);
 		pData[ret] = 0;
 		return 0;
 	}
 
-	LOTRACE_DBG1("(len=%d) ->  ret=%d", len, ret);
+	LOTRACE_DBG1("(len=%d) -> ret=%d", len, ret);
 	pData[ret] = 0;
 	LOTRACE_DBG1("%s", pData);
 

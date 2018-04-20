@@ -44,14 +44,6 @@ typedef enum {
  */
 
 /**
- * @brief Check the value of the LiveObjects Apikey
- *
- * @param apikey      Pointer to Api Key c-string.
- * @return 0 if successful, otherwise a negative value when occur occurs.
- */
-int LiveObjectsClient_CheckApiKey(const char* apikey);
-
-/**
  * @brief Init the Debug Trace Module with a given trace level
  *
  * @param level       Log level.
@@ -62,9 +54,14 @@ void LiveObjectsClient_InitDbgTrace(lotrace_level_t level);
  * @brief Initialize the LiveObjects Client Instance (only one instance on board)
  *        This should always be called first.
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @param network_itf_handle TODO Parameter not used.
+ *
+ * @param apikey_p1 First part (16 MSB) of API Key.
+ * @param apikey_p2 Second part (16 LSB) of API Key.
+ *
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
-int LiveObjectsClient_Init(void* network_itf_handle);
+int LiveObjectsClient_Init(void* network_itf_handle, unsigned long long apikey_p1, unsigned long long apikey_p2);
 
 /**
  * @brief Set Device Identifier.
@@ -76,7 +73,7 @@ int LiveObjectsClient_Init(void* network_itf_handle);
  *                    and/or any special characters in the following list : : - _ | + ,
  *                    and must avoid # / !.
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_SetDevId(const char* dev_id);
 
@@ -89,7 +86,7 @@ int LiveObjectsClient_SetDevId(const char* dev_id);
  *                    (ex: device model, identifier class "imei", msisdn", "mac", etc.)
  *                    Should preferably only contain alphanumeric characters (a-z, A-Z, 0-9).
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_SetNameSpace(const char* name_space);
 
@@ -99,7 +96,7 @@ int LiveObjectsClient_SetNameSpace(const char* name_space);
  *    - when the IP network is up
  *    - and before the LiveObjectsClient_Connect() function.
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_DnsResolve(void);
 
@@ -112,7 +109,7 @@ int LiveObjectsClient_DnsResolve(void);
  *
  * @note If IPV4 Address is NULL, the DNS resolver will be called to resolve the IP address.
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_DnsSetFQDN(const char* domain_name, const char* ip_address);
 
@@ -152,7 +149,7 @@ void LiveObjectsClient_SetDbgMsgDump(uint16_t mode);
  * @param param_nb    Number of elements in this array.
  * @param callback    User callback function, called to check the parameter to be updated.
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_AttachCfgParams(const LiveObjectsD_Param_t* param_ptr,
 		int32_t param_nb, LiveObjectsD_CallbackParams_t callback);
@@ -163,7 +160,7 @@ int LiveObjectsClient_AttachCfgParams(const LiveObjectsD_Param_t* param_ptr,
  * @param status_ptr  Pointer to an array of LiveObjects IoT Data.
  * @param status_nb   Number of elements in this array.
  *
- * @return an handle value >= 0  if successful, otherwise a negative value when occur occurs.
+ * @return an handle value >= 0  if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_AttachStatus(const LiveObjectsD_Data_t* status_ptr, int32_t status_nb);
 
@@ -186,7 +183,7 @@ int LiveObjectsClient_AttachStatus(const LiveObjectsD_Data_t* status_ptr, int32_
  * @param data_ptr    Pointer to an array of LiveObjects IoT Data
  * @param data_nb     Number of elements in this array.
  *
- * @return an handle value >= 0  if successful, otherwise a negative value when occur occurs.
+ * @return an handle value >= 0  if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_AttachData(uint8_t prefix, const char* stream_id,
 		const char* model, const char* tags,
@@ -200,7 +197,7 @@ int LiveObjectsClient_AttachData(uint8_t prefix, const char* stream_id,
  * @param cmd_nb      Number of elements in this array.
  * @param callback    User callback function, called when a command is received from LiveObjects server.
  *
- * @return an handle value >= 0  if successful, otherwise a negative value when occur occurs.
+ * @return an handle value >= 0  if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_AttachCommands(const LiveObjectsD_Command_t* cmd_ptr,
 		int32_t cmd_nb, LiveObjectsD_CallbackCommand_t callback);
@@ -213,7 +210,7 @@ int LiveObjectsClient_AttachCommands(const LiveObjectsD_Command_t* cmd_ptr,
  * @param ntfyCB      User callback function, called when download operation is requested or completed by LiveObjects server.
  * @param dataCB      User callback function, called when data is ready to be read.
  *
- * @return an handle value >= 0  if successful, otherwise a negative value when occur occurs.
+ * @return an handle value >= 0  if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_AttachResources(const LiveObjectsD_Resource_t* rsc_ptr,
 		int32_t rsc_nb, LiveObjectsD_CallbackResourceNotify_t ntfyCB,
@@ -224,7 +221,7 @@ int LiveObjectsClient_AttachResources(const LiveObjectsD_Resource_t* rsc_ptr,
  *
  * @param enable       Boolean to enable/disable the feature
 
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_ControlCommands(bool enable);
 
@@ -233,7 +230,7 @@ int LiveObjectsClient_ControlCommands(bool enable);
  *
  * @param enable       Boolean to enable/disable the feature
 
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_ControlResources(bool enable);
 
@@ -242,7 +239,7 @@ int LiveObjectsClient_ControlResources(bool enable);
  *
  * @param handle      Collected data handle (returned by LiveObjectsClient_AttachData)
 
- * @return  0 if successful, otherwise a negative value when occur occurs.
+ * @return  0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_RemoveData(int handle);
 
@@ -253,7 +250,7 @@ int LiveObjectsClient_RemoveData(int handle);
  * @param stream_id   Pointer to a c-string specifying the Stream Identifier:
  *                    Identifier of the timeseries this collected data belongs to.
 
- * @return  0 if successful, otherwise a negative value when occur occurs.
+ * @return  0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_ChangeDataStreamId(uint8_t prefix, int handle,
 		const char* stream_id);
@@ -263,14 +260,14 @@ int LiveObjectsClient_ChangeDataStreamId(uint8_t prefix, int handle,
  *
  * @param handle     command handle (returned by LiveObjectsClient_AttachCommands)
 
- * @return  0 if successful, otherwise a negative value when occur occurs.
+ * @return  0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_RemoveCommands(void);
 
 /**
  * @brief Remove a set of user resources
  *
- * @return  0 if successful, otherwise a negative value when occur occurs.
+ * @return  0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_RemoveResources(void);
 
@@ -286,7 +283,7 @@ int LiveObjectsClient_RemoveResources(void);
 /**
  * @brief Create a LiveObjects Client thread to do LiveObjectsClient_Run().
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  *
  */
 int LiveObjectsClient_ThreadStart(LiveObjectsD_CallbackState_t callback);
@@ -326,21 +323,21 @@ void LiveObjectsClient_Run(LiveObjectsD_CallbackState_t callback);
 /**
  * @brief Stop the main loop of LiveObjects Client thread.
  *
- * @return 0 if it was running, otherwise a negative value when occur occurs.
+ * @return 0 if it was running, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_Stop(void);
 
 /**
  * @brief Connect the device to the remote LiveObjects Server.
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_Connect(void);
 
 /**
  * @brief Disconnect the device to the remote LiveObjects Server.
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_Disconnect(void);
 
@@ -351,7 +348,7 @@ int LiveObjectsClient_Disconnect(void);
  *
  * @param timeout_ms   Time in milliseconds to wait for message sent/published by LiveObjects platform
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_Yield(int timeout_ms);
 
@@ -362,7 +359,7 @@ int LiveObjectsClient_Yield(int timeout_ms);
  *
  * @param timeout_ms   Time in milliseconds to wait for message sent/published by LiveObjects platform
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_Cycle(int timeout_ms);
 
@@ -383,7 +380,7 @@ int LiveObjectsClient_Cycle(int timeout_ms);
  *
  * @param handle      Handle of user status set
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_PushStatus(int handle);
 
@@ -392,14 +389,14 @@ int LiveObjectsClient_PushStatus(int handle);
  *
  * @param handle      Handle of collected data set
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_PushData(int handle);
 
 /**
  * @brief Request to publish the set of configuration parameters to LiveObjects server.
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_PushCfgParams(void);
 
@@ -407,7 +404,7 @@ int LiveObjectsClient_PushCfgParams(void);
  * @brief Request to publish the set of resources to LiveObjects server.
  *
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 
 int LiveObjectsClient_PushResources(void);
@@ -441,7 +438,7 @@ int LiveObjectsClient_RscGetChunck(const LiveObjectsD_Resource_t* rsc_ptr,
  * @param data_ptr    Pointer to the first data in  an array of data (not an array of pointers)
  * @param data_nb     The number of data in array
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_CommandResponse(int32_t cid,
 	const LiveObjectsD_Data_t* data_ptr, int data_nb);
@@ -453,7 +450,7 @@ int LiveObjectsClient_CommandResponse(int32_t cid,
  * @param topic_name   Pointer to a c-string specifying the MQTT topic.
  * @param payload_data Pointer to a c-string containing the user payload (JSON text message).
  *
- * @return 0 if successful, otherwise a negative value when occur occurs.
+ * @return 0 if successful, otherwise a negative value when error occurs.
  */
 int LiveObjectsClient_Publish(const char* topic_name, const char* payload_data);
 

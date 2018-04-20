@@ -25,7 +25,6 @@ extern "C" {
 #define LOTRACE_LEVEL(level)          lo_trace_level(level)
 
 
-
 #if defined(ARDUINO_MEDIATEK) || defined(ARDUINO_ARCH_SAMD)
 
 #define LOTRACE_ERR_I(...)            lo_trace_log(1, __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__)
@@ -62,7 +61,6 @@ extern "C" {
 #define LOTRACE_DBG_VERBOSE(...)      ((void)0)
 
 #define LOTRACE_PRINTF(...)           ((void)0)
-//#define LOTRACE_PRINTF                lo_trace_printf
 
 #endif
 
@@ -76,9 +74,9 @@ void lo_trace_log( int level,
     unsigned int line,
     const char   *function,
 #endif
-    char const   *format, ... );
+    const char* format, ... );
 
-void lo_trace_printf( char const   *format, ... );
+void lo_trace_printf( const char* format, ... );
 
 #ifdef __cplusplus
 }

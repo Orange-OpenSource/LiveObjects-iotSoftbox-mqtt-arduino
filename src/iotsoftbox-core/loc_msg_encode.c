@@ -262,7 +262,7 @@ static const char* LO_msg_encode_cmd_resp_buf(char* buf_ptr, uint32_t buf_len, i
 	int ret;
 
 	if (cid == 0) {
-		LOTRACE_ERR("failed, invalid parameters cid=%"PRIu32, cid);
+		LOTRACE_ERR("failed, invalid params cid=%"PRIu32, cid);
 		return NULL;
 	}
 
@@ -332,7 +332,7 @@ const char* LO_msg_encode_rsc_result(int32_t cid, LiveObjectsD_ResourceRespCode_
 	int ret;
 
 	if (cid == 0) {
-		LOTRACE_ERR("failed, invalid parameters cid=%"PRIu32, cid);
+		LOTRACE_ERR("failed, invalid params cid=%"PRIu32, cid);
 		return NULL;
 	}
 
@@ -379,12 +379,12 @@ const char* LO_msg_encode_params_update(const LOMSetofUpdatedParams_t* pParamUpd
 	int ret;
 
 	if (pParamUpdateSet == NULL) {
-		LOTRACE_ERR("failed, invalid parameters pParamUpdateSet=%p", pParamUpdateSet);
+		LOTRACE_ERR("failed, invalid params pParamUpdateSet=%p", pParamUpdateSet);
 		return NULL;
 	}
 
 	if (pParamUpdateSet->cid == 0) {
-		LOTRACE_ERR("failed, invalid parameters cid=%"PRIu32, pParamUpdateSet->cid);
+		LOTRACE_ERR("failed, invalid params cid=%"PRIu32, pParamUpdateSet->cid);
 		return NULL;
 	}
 
@@ -456,7 +456,7 @@ const char* LO_msg_encode_cmd_result(int32_t cid, int result) {
 	int ret;
 
 	if (cid == 0) {
-		LOTRACE_ERR("failed, invalid parameters cid=%"PRIu32, cid);
+		LOTRACE_ERR("failed, invalid params cid=%"PRIu32, cid);
 		return NULL;
 	}
 
@@ -582,7 +582,7 @@ const char* LO_msg_encode_status(uint8_t from, const LOMArrayOfData_t* pObjSet) 
 	const char *p_msg;
 
 	if (pObjSet == NULL) {
-		LOTRACE_ERR("failed, invalid parameters pObjSet=%p", pObjSet);
+		LOTRACE_ERR("failed, invalid params pObjSet=%p", pObjSet);
 		return NULL;
 	}
 	if ((pObjSet->data_nb == 0) || (pObjSet->data_ptr == NULL)) {
@@ -621,7 +621,7 @@ const char* LO_msg_encode_data(uint8_t from, const LOMSetOfData_t* pSetData) {
 	const char *p_msg;
 
 	if ((pSetData == NULL) || (pSetData->stream_id[0] == 0)) {
-		LOTRACE_ERR("failed, invalid parameters pDataSet=%p", pSetData);
+		LOTRACE_ERR("failed, invalid params pDataSet=%p", pSetData);
 		return NULL;
 	}
 
@@ -660,7 +660,7 @@ const char* LO_msg_encode_resources(uint8_t from, const LOMSetOfResources_t* pSe
 	const char *p_msg;
 
 	if (pSetResources == NULL) {
-		LOTRACE_ERR("failed, invalid parameters pSetResources=%p", pSetResources);
+		LOTRACE_ERR("failed, invalid params pSetResources=%p", pSetResources);
 		return NULL;
 	}
 	if ((pSetResources->rsc_nb == 0) || (pSetResources->rsc_ptr == NULL)) {
@@ -698,7 +698,7 @@ const char* LO_msg_encode_resources(uint8_t from, const LOMSetOfResources_t* pSe
 const char* LO_msg_encode_params_all(uint8_t from, const LOMArrayOfParams_t* params_array, int32_t cid) {
 	const char *p_msg;
 	if (params_array == NULL) {
-		LOTRACE_ERR("encode_params_all: failed, invalid parameters params_array=%p", params_array);
+		LOTRACE_ERR("encode_params_all: failed, invalid params params_array=%p", params_array);
 		return NULL;
 	}
 	if ((params_array->param_nb == 0) || (params_array->param_ptr == NULL)) {

@@ -14,8 +14,6 @@
 #ifndef __netw_wrapper_H_
 #define __netw_wrapper_H_
 
-#include "liveobjects-client/LiveObjectsClient_Security.h"
-
 #include "liveobjects-sys/mqtt_network_interface.h"
 
 #if defined(__cplusplus)
@@ -31,8 +29,6 @@ typedef struct {
 unsigned char netw_isLost(Network *pNetwork);
 
 int netw_init(Network *pNetwork, void* net_iface_handler);
-
-int netw_setSecurity(Network *pNetwork, const LiveObjectsSecurityParams_t* params);
 
 int netw_connect(Network *pNetwork, LiveObjectsNetConnectParams_t* params);
 

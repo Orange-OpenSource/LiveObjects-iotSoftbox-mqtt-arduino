@@ -13,20 +13,11 @@
 #ifndef __liveobjects_sample_H__
 #define __liveobjects_sample_H__
 
-// LiveObjects Device settings: IP Address, TLS or not , ..;
-#include "config/liveobjects_dev_params.h"
-
-// LiveObjects Library interface
-#include "liveobjects-client/LiveObjectsClient_Core.h"
-
 // Definitions for this board or os.
 #include "liveobjects-sys/LiveObjectsClient_Platform.h"
 
-
 //set to use Wifi or GPRS
 #define WIFI_USED 0 //false  //true (Wifi) or false (GPRS)
-
-
 
 /* change GPRS settings here */
 #define GPRS_APN       "orange.m2m.spec"

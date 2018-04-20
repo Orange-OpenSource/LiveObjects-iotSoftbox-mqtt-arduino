@@ -13,11 +13,15 @@
 
 #include <arduino.h>
 
+#include "config/liveobjects_dev_params.h"
+//Default internal modem for Linkit One is ARDUINO_CONN_ITF = -1
+//External modem is 4
+
+
 #include "liveobjects-Client/LiveObjectsClient_Config.h"
 #include "liveobjects-sys/LiveObjectsClient_Platform.h"
 
-#if defined(ARDUINO_MEDIATEK)
-
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1) // Internal model of the Linkit one
 /*
  * LinkIt/MediaTek Interfaces
  * See http://labs.mediatek.com/site/global/developer_tools/mediatek_linkit_assist_2502/api_references/C_STD.gsp p
@@ -29,20 +33,19 @@
 #include <unistd.h>
 #include <signal.h>
 #include <fcntl.h>
-
 #include <errno.h>
-
 #include <stdlib.h>
 #include <stdio.h>
-
 #include <time.h>
-
 #include <stdint.h>
 
+#elif ARDUINO_CONN_ITF==4 // Usage of the external modem
+#include <HeraclesGsmModem.h>
+#define SerialAT Serial1
+static HeraclesGsmModem modem(SerialAT);
+static HeraclesGsmModem::GsmClient _netw_client(modem);
 #else
-
 #error "No definition for Arduino Architecture"
-
 #endif
 
 #include "liveobjects-sys/loc_trace.h"
@@ -74,7 +77,7 @@ extern "C" uint64_t f_netw_be64toh(uint64_t x) {
 
 /* --------------------------------------------------------------------------------- */
 /*  */
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 extern "C" int netw_would_block( int sock_fd )
 {
 	/*
@@ -138,12 +141,12 @@ extern "C" uint8_t f_netw_sock_isLost(Network *pNetwork) {
 extern "C" int f_netw_sock_close(Network *pNetwork) {
 	LOTRACE_ERR_I("f_netw_sock_close(%" PRIsock " %p)...", _netw_socket, pNetwork);
 
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 	if (_netw_socket >= 0) {
 		vm_closesocket(_netw_socket);
 	}
 #endif
-#if defined(ARDUINO_ITF)
+#if defined(ARDUINO_ITF) || (ARDUINO_CONN_ITF==4)
 	if ((_netw_socket != SOCKETHANDLE_NULL) && _netw_client.connected()) {
 		_netw_client.stop();
 	}
@@ -172,7 +175,8 @@ extern "C" int f_netw_sock_connect(Network *pNetwork, const char* RemoteHostAddr
 	LOTRACE_DBG1("(RemoteHostAddress=%s RemoteHostPort=%u tmo_ms=%u) (_netw_socket=%" PRIsock ") ...",
 			RemoteHostAddress, RemoteHostPort, tmo_ms, _netw_socket);
 
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
+
 	if (_netw_socket >= 0) {
 		vm_closesocket(_netw_socket);
 	}
@@ -183,9 +187,10 @@ extern "C" int f_netw_sock_connect(Network *pNetwork, const char* RemoteHostAddr
 	if ((ret == 0) && (_netw_socket >= 0)) {
 		_netw_bSockState = 0x01;
 	}
+
 #endif /* ARDUINO_MEDIATEK */
 
-#if defined(ARDUINO_ITF)
+#if defined(ARDUINO_ITF) || (ARDUINO_CONN_ITF==4)
 	if (_netw_client.connected()) {
 		LOTRACE_ERR_I("Closing the connection ..");
 		_netw_client.stop();
@@ -217,7 +222,7 @@ extern "C" int f_netw_sock_connect(Network *pNetwork, const char* RemoteHostAddr
 extern "C" int f_netw_sock_recv(void *pNetwork, unsigned char* buf, size_t len) {
 	int ret;
 
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 	if (_netw_socket < 0) {
 		return ( NETW_ERR_NET_INVALID_CONTEXT);
 	}
@@ -226,13 +231,12 @@ extern "C" int f_netw_sock_recv(void *pNetwork, unsigned char* buf, size_t len) 
 	ret = (int) vm_recv(_netw_socket, (char*)buf, len, 0);
 	if (ret < 0) {
 		if (netw_would_block(_netw_socket) != 0) {
-			LOTRACE_INF("(_netw_socket=%" PRIsock " len=%x) ret=%d x%x", _netw_socket, len, ret, NETW_ERR_SSL_WANT_READ);
-			return ( NETW_ERR_SSL_WANT_READ);
+			LOTRACE_INF("(_netw_socket=%" PRIsock " len=%x) ret=%d x%x", _netw_socket, len, ret, NETW_ERR_NET_RECV_WANT_READ);
+			return ( NETW_ERR_NET_RECV_WANT_READ);
 		}
 		if (errno == EINTR) {
-			LOTRACE_INF("(ctx=%p _netw_socket=%" PRIsock " len=%x) ret=%d x%x", _netw_socket, len, ret,
-					NETW_ERR_SSL_WANT_READ);
-			return ( NETW_ERR_SSL_WANT_READ);
+			LOTRACE_INF("(ctx=%p _netw_socket=%" PRIsock " len=%x) ret=%d x%x", _netw_socket, len, ret, NETW_ERR_NET_RECV_WANT_READ);
+			return ( NETW_ERR_NET_RECV_WANT_READ);
 		}
 		if (errno == EPIPE || errno == ECONNRESET) {
 			_netw_bSockState |= 0x02;
@@ -245,7 +249,7 @@ extern "C" int f_netw_sock_recv(void *pNetwork, unsigned char* buf, size_t len) 
 		return ( NETW_ERR_NET_RECV_FAILED);
 	}
 #endif
-#if defined(ARDUINO_ITF)
+#if defined(ARDUINO_ITF) || (ARDUINO_CONN_ITF==4)
 	if (_netw_client.connected()) {
 		ret = _netw_client.available();
 		if (ret > 0) {
@@ -253,7 +257,7 @@ extern "C" int f_netw_sock_recv(void *pNetwork, unsigned char* buf, size_t len) 
 			ret = _netw_client.read(buf, len);
 		}
 		else {
-			ret = NETW_ERR_SSL_WANT_READ;
+			ret = NETW_ERR_NET_RECV_FAILED;
 		}
 	}
 	else {
@@ -269,7 +273,7 @@ extern "C" int f_netw_sock_recv(void *pNetwork, unsigned char* buf, size_t len) 
 /* --------------------------------------------------------------------------------- */
 /*  */
 extern "C" int f_netw_sock_recv_timeout(void *pNetwork, unsigned char *buf, size_t len, uint32_t timeout) {
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 	int ret;
 	timeval tv;
 	fd_set read_fds;
@@ -294,20 +298,20 @@ extern "C" int f_netw_sock_recv_timeout(void *pNetwork, unsigned char *buf, size
 	/* Zero fds ready means we timed out */
 	if (ret == 0) {
 		LOTRACE_DBG_VERBOSE("TIMEOUT (sock=%" PRIsock " len=%d tmo=%u) => x%x!", _netw_socket, len, timeout,
-				NETW_ERR_SSL_TIMEOUT);
-		return ( NETW_ERR_SSL_TIMEOUT);
+		        NETW_ERR_NET_RECV_TIMEOUT);
+		return ( NETW_ERR_NET_RECV_TIMEOUT);
 	}
 
 	if (ret < 0) {
 		if (errno == EINTR) {
 			LOTRACE_NOTICE("SELECT INTERRUPT (sock=%" PRIsock " tmo=%u) %d !", _netw_socket, timeout, ret);
-			return ( NETW_ERR_SSL_WANT_READ);
+			return ( NETW_ERR_NET_RECV_WANT_READ);
 		}
 		LOTRACE_NOTICE("SELECT ERR (sock=%" PRIsock " tmo=%u) %d !", _netw_socket, timeout, ret);
 		return ( NETW_ERR_NET_RECV_FAILED);
 	}
 #endif
-#if defined(ARDUINO_ITF)
+#if defined(ARDUINO_ITF) || (ARDUINO_CONN_ITF==4)
 	LOTRACE_DBG2("RCV(len=%u, tmo=%u)...", len, timeout);
 	if (timeout > 0) {
 		uint32_t dt = 0;
@@ -323,7 +327,7 @@ extern "C" int f_netw_sock_recv_timeout(void *pNetwork, unsigned char *buf, size
 		}
 		if (!_netw_client.available()) {
 			LOTRACE_DBG2("TIMEOUT ! (tmo=%u dt=%u)", timeout, dt);
-			return (NETW_ERR_SSL_TIMEOUT);
+			return (NETW_ERR_NET_RECV_TIMEOUT);
 		}
 	}
 #endif
@@ -339,7 +343,7 @@ extern "C" int f_netw_sock_send(void *pNetwork, const unsigned char *buf, size_t
 
 	LOTRACE_DBG2("(pNetwork=%p _netw_socket=%" PRIsock " buf=%p len=%d)...", pNetwork, _netw_socket, buf, len);
 
-#if defined(ARDUINO_MEDIATEK)
+#if defined(ARDUINO_MEDIATEK) && (ARDUINO_CONN_ITF==-1)
 	if (_netw_socket < 0) {
 		LOTRACE_ERR_I("Invalid context %d", _netw_socket);
 		return ( NETW_ERR_NET_INVALID_CONTEXT);
@@ -347,19 +351,20 @@ extern "C" int f_netw_sock_send(void *pNetwork, const unsigned char *buf, size_t
 	ret = (int) vm_send(_netw_socket, (const char *)buf, len, 0);
 	if (ret < 0) {
 		if (netw_would_block(_netw_socket) != 0)
-		return ( NETW_ERR_SSL_WANT_WRITE);
+		    return (NETW_ERR_NET_RECV_WANT_WRITE);
 
 		if (errno == EINTR)
-		return ( NETW_ERR_SSL_WANT_WRITE);
+		    return (NETW_ERR_NET_RECV_WANT_WRITE);
 
 		LOTRACE_ERR_I("ERROR %d (errno=%d) returnd by vm_send(len=%d)", ret, errno, len);
 
 		if (errno == EPIPE || errno == ECONNRESET)
-		return ( NETW_ERR_NET_CONN_RESET);
+		    return ( NETW_ERR_NET_CONN_RESET);
+
 		return ( NETW_ERR_NET_SEND_FAILED);
 	}
 #endif
-#if defined(ARDUINO_ITF)
+#if defined(ARDUINO_ITF) ||(ARDUINO_CONN_ITF==4)
 	if (_netw_socket != &_netw_client) {
 		LOTRACE_ERR_I("Invalid context %" PRIsock, _netw_socket);
 		return ( NETW_ERR_NET_INVALID_CONTEXT);
@@ -372,7 +377,8 @@ extern "C" int f_netw_sock_send(void *pNetwork, const unsigned char *buf, size_t
 #if (ARDUINO_CONN_ITF == 1) /* GSM */
 		_netw_client.endWrite(true);
 #endif
-		if (ret != len) {
+
+		if ((size_t)ret != len) {
 			LOTRACE_ERR_I("ERROR %d returned by _netw_client.write(len=%d)", ret, len);
 		}
 	}
@@ -384,4 +390,3 @@ extern "C" int f_netw_sock_send(void *pNetwork, const unsigned char *buf, size_t
 	LOTRACE_DBG_VERBOSE("(_netw_socket=%" PRIsock " len=%d) ret= %d", _netw_socket, len, ret);
 	return (ret);
 }
-

@@ -86,8 +86,7 @@ static jsmntype_t conv_objTypeTojsmntype(LOMObjType_t objType)
 /*  */
 static int check_token(const char* payload_json, const jsmntok_t* token, const char* name) {
 	if ((payload_json == NULL) || (token == NULL) || (name == NULL) || (*name == 0)) {
-		LOTRACE_ERR("Invalid parameters - payload=x%p token=x%p name=x%p (x%x)", payload_json, token, name,
-				(name) ? *name : 0xFFFF);
+		LOTRACE_ERR("Invalid params - payload=x%p token=x%p name=x%p", payload_json, token, name);
 		return -1;
 	}
 	if (token->type == JSMN_STRING) {
@@ -117,7 +116,7 @@ static int check_token(const char* payload_json, const jsmntok_t* token, const c
 /*  */
 static int isValidTokenPrimitive(const char* from, const char* payload_json, const jsmntok_t* token) {
 	if ((payload_json == NULL) || (token == NULL)) {
-		LOTRACE_ERR("%s: Invalid parameters - payload=x%p token=x%p", from, payload_json, token);
+		LOTRACE_ERR("%s: Invalid params - payload=x%p token=x%p", from, payload_json, token);
 		return -1;
 	}
 #if (SANITY_CHECK)
@@ -140,7 +139,7 @@ static int getValueINT32(int32_t* value, const char* payload_json, const jsmntok
 	if (isValidTokenPrimitive("getValueINT32", payload_json, token)) {
 		return -1;
 	}
-	if (1 != sscanf(payload_json + token->start, "%"PRIi32, value)) {
+	if (1 != sscanf(payload_json + token->start, "%" SCNi32, value)) {
 		LOTRACE_WARN("%s: Bad token value.", "getValueINT32");
 		return -1;
 	}
@@ -150,7 +149,7 @@ static int getValueINT32(int32_t* value, const char* payload_json, const jsmntok
 #ifdef SUPPORT_CMD_ARGS
 static int getValueINT16(int16_t* value, const char* payload_json, const jsmntok_t* token) {
 	if (isValidTokenPrimitive("getValueINT16", payload_json, token)) return -1;
-	if (1 != sscanf(payload_json + token->start, "%"PRIi16, value)) {
+	if (1 != sscanf(payload_json + token->start, "%" SCNi16, value)) {
 		LOTRACE_WARN("%s: Bad token value.", "getValueINT16");
 		return -1;
 	}
@@ -159,7 +158,7 @@ static int getValueINT16(int16_t* value, const char* payload_json, const jsmntok
 
 static int getValueINT8(int8_t* value, const char* payload_json, const jsmntok_t* token) {
 	if (isValidTokenPrimitive("getValueINT8", payload_json, token)) return -1;
-	if (1 != sscanf(payload_json + token->start, "%"PRIi8, value)) {
+	if (1 != sscanf(payload_json + token->start, "%" SCNi8, value)) {
 		LOTRACE_WARN("%s: Bad token value.", "getValueINT8");
 		return -1;
 	}
@@ -170,7 +169,7 @@ static int getValueINT8(int8_t* value, const char* payload_json, const jsmntok_t
 static int getValueUINT32(uint32_t* value, const char* payload_json, const jsmntok_t* token) {
 	if (isValidTokenPrimitive("getValueUINT32", payload_json, token))
 		return -1;
-	if (1 != sscanf(payload_json + token->start, "%"PRIu32, value)) {
+	if (1 != sscanf(payload_json + token->start, "%" SCNu32, value)) {
 		LOTRACE_WARN("%s: Bad token value.", "getValueUINT32");
 		return -1;
 	}
@@ -180,7 +179,7 @@ static int getValueUINT32(uint32_t* value, const char* payload_json, const jsmnt
 #ifdef SUPPORT_CMD_ARGS
 static int getValueUINT16(uint16_t* value, const char* payload_json, const jsmntok_t* token) {
 	if (isValidTokenPrimitive("getValueUINT16", payload_json, token)) return -1;
-	if (1 != sscanf(payload_json + token->start, "%"PRIu16, value)) {
+	if (1 != sscanf(payload_json + token->start, "%" SCNu16, value)) {
 		LOTRACE_WARN("%s: Bad token value.", "getValueUINT16");
 		return -1;
 	}
@@ -189,7 +188,7 @@ static int getValueUINT16(uint16_t* value, const char* payload_json, const jsmnt
 
 static int getValueUINT8(uint8_t* value, const char* payload_json, const jsmntok_t* token) {
 	if (isValidTokenPrimitive("getValueUINT8", payload_json, token)) return -1;
-	if (1 != sscanf(payload_json + token->start, "%"PRIu8, value)) {
+	if (1 != sscanf(payload_json + token->start, "%" SCNu8, value)) {
 		LOTRACE_WARN("%s: Bad token value.", "getValueUINT8");
 		return -1;
 	}
@@ -235,8 +234,7 @@ static int getValueDOUBLE(double* value, const char* payload_json, const jsmntok
 static int get_CorrelationId(int32_t* pCid, const char* payload_data, const jsmntok_t* tokens, int32_t token_cnt) {
 	int idx;
 	if ((payload_data == NULL) || (tokens == NULL) || (pCid == NULL)) {
-		LOTRACE_ERR("Invalid parameters - payload=x%p tokens=x%p pCid=x%p", payload_data, tokens,
-				pCid);
+		LOTRACE_ERR("Invalid params - payload=x%p tokens=x%p pCid=x%p", payload_data, tokens, pCid);
 		return -1;
 	}
 
@@ -277,7 +275,7 @@ static int updateCnfParam(const char* payload_json, const jsmntok_t* token, cons
 		LiveObjectsD_CallbackParams_t cfgCB) {
 	int ret;
 	if ((payload_json == NULL) || (token == NULL) || (param_ptr == NULL)) {
-		LOTRACE_ERR("Invalid parameters - payload=x%p token=x%p param_ptr=x%p", payload_json, token,
+		LOTRACE_ERR("Invalid params - payload=x%p token=x%p param_ptr=x%p", payload_json, token,
 				param_ptr);
 		return -1;
 	}
@@ -367,7 +365,7 @@ static void dump_json_msg(const char* from, const char* payload_data, const jsmn
 static int get_md5FromString(const unsigned char *s, unsigned char *buf_ptr, uint32_t buf_len) {
 	uint32_t i, j, k;
 	if ((s == NULL) || (buf_ptr == NULL) || (buf_len == 0)) {
-		LOTRACE_ERR("Invalid parameters, s=x%p buf_ptr=x%p buf_len=%"PRIu32, s, buf_ptr, buf_len);
+		LOTRACE_ERR("Invalid params, s=x%p buf_ptr=x%p buf_len=%"PRIu32, s, buf_ptr, buf_len);
 		return -1;
 	}
 	memset(buf_ptr, 0, buf_len);
@@ -396,6 +394,9 @@ static int get_md5FromString(const unsigned char *s, unsigned char *buf_ptr, uin
 /* Decode a received JSON message to download resource
  */
 LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, uint32_t payload_len,
+        const LOMSetOfResources_t* pSetRsc, LOMSetOfUpdatedResource_t* pRscUpd, int32_t* pCid) __attribute__((__optimize__("O2")));
+
+LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, uint32_t payload_len,
 		const LOMSetOfResources_t* pSetRsc, LOMSetOfUpdatedResource_t* pRscUpd, int32_t* pCid) {
 	int ret;
 	int token_cnt;
@@ -406,7 +407,7 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 	int size;
 
 	if ((pSetRsc == NULL) || (payload_data == NULL) || (payload_len == 0) || (pRscUpd == NULL) || (pCid == NULL)) {
-		LOTRACE_ERR("Invalid parameters, pSetCfg=x%p payload_data=x%p (%"PRIu32")", pSetRsc, payload_data,
+		LOTRACE_ERR("Invalid params, pSetCfg=x%p payload_data=x%p (%"PRIu32")", pSetRsc, payload_data,
 				payload_len);
 		return RSC_RSP_ERR_INTERNAL_ERROR;
 	}
@@ -422,7 +423,7 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 		return RSC_RSP_ERR_INTERNAL_ERROR;
 	}
 	if (token_cnt == 0) {
-		LOTRACE_ERR("EMPTY !!");
+		LOTRACE_ERR("EMPTY !");
 		return RSC_RSP_OK;
 	}
 
@@ -431,7 +432,7 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 #endif
 
 	if (token_cnt < 1) {
-		LOTRACE_ERR("Bad format - token_cnt=%d < 1 too short !!", token_cnt);
+		LOTRACE_ERR("Bad format - token_cnt=%d < 1 too short !", token_cnt);
 		return RSC_RSP_ERR_INTERNAL_ERROR;
 	}
 
@@ -570,7 +571,7 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 							val_ptr[len] = 0;
 						}
 						else if (val_type == 3) {
-							if (1 != sscanf(payload_data + tokens[idx + 1].start, "%"PRIu32, (uint32_t*) val_ptr)) {
+							if (1 != sscanf(payload_data + tokens[idx + 1].start, "%" SCNu32, (uint32_t*) val_ptr)) {
 								LOTRACE_ERR("TK[%d] %.*s , bad value", idx + 1,
 										tokens[idx + 1].end - tokens[idx + 1].start,
 										payload_data + tokens[idx + 1].start);
@@ -581,14 +582,14 @@ LiveObjectsD_ResourceRespCode_t LO_msg_decode_rsc_req(const char* payload_data, 
 							if ((tokens[idx + 1].end - tokens[idx + 1].start) == (val_len * 2)) {
 								if (get_md5FromString((const unsigned char*) (payload_data + tokens[idx + 1].start),
 										(unsigned char*) val_ptr, val_len)) {
-									LOTRACE_ERR("TK[%d] mdq5= %.*s , bad value", idx + 1,
+									LOTRACE_ERR("TK[%d] md5= %.*s , bad value", idx + 1,
 											tokens[idx + 1].end - tokens[idx + 1].start,
 											payload_data + tokens[idx + 1].start);
 									//return 2;
 								}
 							}
 							else {
-								LOTRACE_ERR("TK[%d] mdq5= %.*s, bad length %d", idx + 1,
+								LOTRACE_ERR("TK[%d] md5= %.*s, bad length %d", idx + 1,
 										tokens[idx + 1].end - tokens[idx + 1].start,
 										payload_data + tokens[idx + 1].start,
 										tokens[idx + 1].end - tokens[idx + 1].start);
@@ -700,7 +701,7 @@ int LO_msg_decode_params_req(const char* payload_data, uint32_t payload_len, con
 	int len;
 
 	if ((pSetCfg == NULL) || (payload_data == NULL) || (payload_len == 0) || (pSetCfgUpdate == NULL)) {
-		LOTRACE_ERR("Invalid parameters, pSetCfg=x%p payload_data=x%p (%"PRIu32") pSetCfgUpdate=x%p",
+		LOTRACE_ERR("Invalid params, pSetCfg=x%p payload_data=x%p (%"PRIu32") pSetCfgUpdate=x%p",
 				pSetCfg, payload_data, payload_len, pSetCfgUpdate);
 		return -1;
 	}
@@ -718,7 +719,7 @@ int LO_msg_decode_params_req(const char* payload_data, uint32_t payload_len, con
 	}
 #undef NB_TK_FOR_PARMS
 	if (token_cnt == 0) {
-		LOTRACE_ERR("EMPTY !!");
+		LOTRACE_ERR("EMPTY !");
 		return 0;
 	}
 
@@ -727,7 +728,7 @@ int LO_msg_decode_params_req(const char* payload_data, uint32_t payload_len, con
 #endif
 
 	if (token_cnt < 2) {
-		LOTRACE_ERR("Bad format - token_cnt=%d < 2 too short !!", token_cnt);
+		LOTRACE_ERR("Bad format - token_cnt=%d < 2 too short !", token_cnt);
 		return -1;
 	}
 
@@ -762,7 +763,7 @@ int LO_msg_decode_params_req(const char* payload_data, uint32_t payload_len, con
 
 	// Get the number of parameters
 	size = tokens[2].size;
-	LOTRACE_DBG1("%d parameters (token_cnt=%d) ...", size, token_cnt);
+	LOTRACE_DBG1("%d params (token_cnt=%d) ...", size, token_cnt);
 
 	// Now, get each configuration parameter
 	while (size > 0) {
@@ -860,7 +861,7 @@ int LO_msg_decode_cmd_req(const char* payload_data, uint32_t payload_len, const 
 	const LiveObjectsD_Command_t* cmd_ptr;
 
 	if ((pSetCmd == NULL) || (payload_data == NULL) || (pCid == NULL)) {
-		LOTRACE_ERR("Invalid parameters, pSetCmd=x%p payload_data=x%p pCid=x%p", pSetCmd, payload_data,
+		LOTRACE_ERR("Invalid params, pSetCmd=x%p payload_data=x%p pCid=x%p", pSetCmd, payload_data,
 				pCid);
 		return -1;
 	}
@@ -876,7 +877,7 @@ int LO_msg_decode_cmd_req(const char* payload_data, uint32_t payload_len, const 
 		return -1;
 	}
 	if (token_cnt == 0) {
-		LOTRACE_NOTICE("EMPTY !!");
+		LOTRACE_NOTICE("EMPTY !");
 		return 0;
 	}
 
@@ -885,12 +886,12 @@ int LO_msg_decode_cmd_req(const char* payload_data, uint32_t payload_len, const 
 #endif
 
 	if (token_cnt < 5) {
-		LOTRACE_ERR("Bad format - token_cnt=%d < 5 too short !! ", token_cnt);
+		LOTRACE_ERR("Bad format - token_cnt=%d < 5 too short ! ", token_cnt);
 		return -1;
 	}
 
 	if ((tokens[0].type != JSMN_OBJECT) || (tokens[0].size <= 0)) {
-		LOTRACE_ERR("Bad format: Empty !!  %d [0]=(%d,%d)", token_cnt, tokens[0].type, tokens[0].size);
+		LOTRACE_ERR("Bad format: Empty ! %d [0]=(%d,%d)", token_cnt, tokens[0].type, tokens[0].size);
 		return -1;
 	}
 
@@ -902,14 +903,14 @@ int LO_msg_decode_cmd_req(const char* payload_data, uint32_t payload_len, const 
 	}
 
 	// Now, Check the first tokens
-	// Note: suppose that token[1]= "req" and token[3]= "arg", and so cid at the end !!
+	// Note: suppose that token[1]= "req" and token[3]= "arg", and so cid at the end !
 	if ((tokens[0].type != JSMN_OBJECT) || (tokens[0].size < 3) // at least 3 items : "req", "arg" and "cid"
 			|| (tokens[1].type != JSMN_STRING) || (tokens[1].size != 1) // expected : "req"
 			|| (tokens[2].type != JSMN_STRING) || (tokens[2].size != 0) // expected : name of request
 			) {
 		LOTRACE_ERR("Bad format (cid=%"PRIi32") - %d [0]=(%d,%d) [1]=(%d,%d) [2]=(%d,%d)", *pCid, token_cnt,
 				tokens[0].type, tokens[0].size, tokens[1].type, tokens[1].size, tokens[2].type, tokens[2].size);
-		//pCid = 0; // set cid=0 => no response, otherwise LiveObjects platform will send again this malformed command !!
+		//pCid = 0; // set cid=0 => no response, otherwise LiveObjects platform will send again this malformed command !
 		return -2;
 	}
 
@@ -937,7 +938,7 @@ int LO_msg_decode_cmd_req(const char* payload_data, uint32_t payload_len, const 
 				payload_data + tokens[2].start);
 		return -3;
 	}
-	if (pSetCmd->cmd_callback == NULL) { // No callback function !!
+	if (pSetCmd->cmd_callback == NULL) { // No callback function !
 		LOTRACE_ERR("cid=%"PRIi32" - command \"%.*s\" - No function to process command", *pCid, size,
 				payload_data + tokens[2].start);
 		return -4;
@@ -960,7 +961,7 @@ int LO_msg_decode_cmd_req(const char* payload_data, uint32_t payload_len, const 
 	// Get the number of arguments
 	size = tokens[4].size;
 
-	LOTRACE_DBG1("cid=%"PRIi32" - command \"%.*s\" with %d parameters ...", *pCid,
+	LOTRACE_DBG1("cid=%"PRIi32" - command \"%.*s\" with %d params ...", *pCid,
 			tokens[2].end - tokens[2].start, payload_data + tokens[2].start, size);
 
 	// Now, get each argument. Support only simple type - "name" : string or primitive value
@@ -1037,7 +1038,7 @@ int LO_msg_decode_cmd_req(const char* payload_data, uint32_t payload_len, const 
 		//TODO: Must be fixed - How to pass arguments to user ?
 #if (MSG_DBG > 1)
 		{
-			int i;
+			unsigned int i;
 			LOTRACE_INF("process command with %d args: ", pReqBlkWithArgs->hd.cmd_args_nb);
 			for (i = 0; i < pReqBlkWithArgs->hd.cmd_args_nb; i++) {
 				LOTRACE_INF("arg[%d] (%d)  %s %s", i, pReqBlkWithArgs->args_array[i].arg_type,

@@ -11,8 +11,8 @@
  * @brief Specific definitions for LiveObjects Client library
  */
 
-#ifndef __LiveObjectsClient_Paltform_H_
-#define __LiveObjectsClient_Paltform_H_
+#ifndef __LiveObjectsClient_Platform_H_
+#define __LiveObjectsClient_Platform_H_
 
 #include <inttypes.h>
 #include <stdlib.h>
@@ -47,6 +47,15 @@
 #if defined(ARDUINO_ARCH_MTK) || defined(ARDUINO_MTK_ONE)
 #define ARDUINO_MEDIATEK   1
 #define ARDUINO_BOARD      "MDK"
+#elif defined(ARDUINO_ARCH_AVR)
+#if defined(ARDUINO_AVR_MEGA2560)
+#define ARDUINO_BOARD      "MEGA"
+#elif defined(ARDUINO_AVR_ADK)
+#define ARDUINO_BOARD      "ADK"
+#else
+#define ARDUINO_BOARD      "???"
+#endif
+#define  ARDUINO_DTOSTRE
 #else
 #error "Unknown Arduino platform"
 #endif
@@ -86,4 +95,4 @@ typedef enum
 
 #endif
 
-#endif /* __LiveObjectsClient_Paltform_H_ */
+#endif /* __LiveObjectsClient_Platform_H_ */

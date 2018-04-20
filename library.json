@@ -1,7 +1,7 @@
 {
 "name": "LiveObjects iotsoftbox",
 "frameworks": "Arduino",
-"description": "LiveObjects iotsoftbox C library for LinkIt One or Arduino Mega",
+"description": "LiveObjects iotsoftbox C library",
 "url": "https://github.com/Orange-OpenSource/LiveObjects-iotSoftbox-mqtt-arduino",
 "authors":
 [

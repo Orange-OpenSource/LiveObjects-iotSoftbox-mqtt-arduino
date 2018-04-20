@@ -53,7 +53,7 @@ extern "C" void lo_trace_log(int level,
 		unsigned int line,
 		const char *function,
 #endif
-		char const *format, ...) {
+		const char* format, ...) {
 	if (level > 0) {
 		va_list ap;
 		va_start(ap, format);
@@ -74,7 +74,7 @@ extern "C" void lo_trace_log(int level,
 #endif
 			*end_str = LOGP_MSG_TAG;
 
-			pt_str += snprintf(pt_str, end_str - pt_str, "%u", ++_trace_index);
+			pt_str += snprintf(pt_str, end_str - pt_str, "%" PRIu32, ++_trace_index);
 
 #if 0
 			if (pt_str < end_str) {
@@ -162,14 +162,14 @@ extern "C" void lo_trace_log(int level,
 				*pt_str = 0;
 
 			if (_trace_console) {
-				;
 				Serial.print(_trace_str);
 			}
 		}
+		va_end(ap);
 	}
 }
 
-extern "C" void lo_trace_printf(char const *format, ...) {
+extern "C" void lo_trace_printf(const char* format, ...) {
 	va_list ap;
 	va_start(ap, format);
 
@@ -204,4 +204,5 @@ extern "C" void lo_trace_printf(char const *format, ...) {
 		Serial.print(_trace_str);
 	}
 
+	va_end(ap);
 }

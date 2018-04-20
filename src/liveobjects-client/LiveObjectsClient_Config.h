@@ -11,7 +11,6 @@
  * @brief Default configuration for LiveObjects Client library
  *
  * To implement or not a Live Objects Feature, set to 1 or 0 (by default 1, it is implemented):
- * - LOC_FEATURE_MBEDTLS      SSL/TLS feature
  * - LOC_FEATURE_LO_STATUS    'Status/Info' feature.
  * - LOC_FEATURE_LO_PARAMS    'Configuration Parameters' feature.
  * - LOC_FEATURE_LO_DATA      'Collected Data' feature.
@@ -57,10 +56,6 @@
 #ifndef LOC_MQTT_DUMP_MSG
 /* see also LOC_MQT_DUMP_STATIC_BUFFER_SIZE specific platform definition */
 #define LOC_MQTT_DUMP_MSG                    3
-#endif
-
-#ifndef LOC_FEATURE_MBEDTLS
-#define LOC_FEATURE_MBEDTLS                  1
 #endif
 
 #ifndef LOC_FEATURE_LO_STATUS

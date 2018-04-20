@@ -6,24 +6,12 @@
    or at 'https://opensource.org/licenses/BSD-3-Clause'.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <unistd.h>
+// Include LiveBooster-Heracles-Arduino library to send AT commands to Heracles modem
+#include <HeraclesGsmModem.h>
 
-#include <signal.h>
-#include <limits.h>
-
-#include <vmsys.h>
-#include <vmsock.h>
-
-#ifdef connect
-#undef connect
-#endif
-
-#include <LTask.h>
-#include <LGPRS.h>
-#include <LGSM.h>
+// Use Serial1 UART for modem interface: pins 18 (TX1), 19 (RX1) on Arduino MEGA ADK.
+#define SerialAT Serial1
+HeraclesGsmModem modem(SerialAT);
 
 // Default LiveObjects device settings: name space and device identifier
 #define LOC_CLIENT_DEV_NAME_SPACE            "LiveObjectsSample"
@@ -46,15 +34,17 @@
 
 // Include LiveObjects interface to create connection with Live Objects platform
 #include "liveobjects_iotsoftbox_api.h"
-#include "liveobjects_sample_basic_mdk.h"
 
-const char* appv_version   = "ARDUINO_MDK BASIC SAMPLE V04.14";
+// Definitions for this board or OS
+#include "liveobjects-sys/LiveObjectsClient_Platform.h"
+
+const char* appv_version = "Sample_LiveObjects_Heracles_AVR V00.03";
 
 #define APP_FEATURE_LO_STATUS                    1
 #define APP_FEATURE_LO_DATA                      1
 #define APP_FEATURE_LO_PARAMS                    1
 #define APP_FEATURE_LO_COMMANDS                  1
-#define APP_FEATURE_LO_RESOURCES                 3
+#define APP_FEATURE_LO_RESOURCES                 1
 
 #define DBG_DFT_TRACE_LEVEL      LOTRACE_LEVEL_INF
 #define DBG_DFT_MSG_DUMP         0                 // set 0x0F to have all message dump (text+hexa)
@@ -627,43 +617,14 @@ void appli_sched(void)
 
 // ==========================================================
 //
-static VMINT    appv_bearer_handle;
-static VMINT    appv_bearer_event = 0;
 
 static short    appv_con_liveobjects = 0;
-static enum {
-  DNS_RESOLVE_ERROR = - 1,
-  DNS_RESOLVE_IDLE = 0,
-  DNS_RESOLVE_PENDING,
-  DNS_RESOLVE_OK
-} appv_con_dnsresolve = DNS_RESOLVE_IDLE;
 
-
-void app_dns_resolve_awakeup(char state)
-{
-  Serial.print(millis());
-  Serial.print(":app_dns_resolve_awakeup: DNS ");
-  if (state == 1) Serial.print("RESOLVED ");
-  else if (state == 2) Serial.print("BAD ");
-  else Serial.print("ERROR ");
-#if DNS_BLOCKING
-  Serial.print("=> post signal");
-#endif
-  Serial.println("");
-
-  appv_con_dnsresolve = (state == 1) ? DNS_RESOLVE_OK : DNS_RESOLVE_ERROR;
-
-#if DNS_BLOCKING
-  LTask.post_signal();
-#endif
-}
-
-boolean  liveobjects_do_init(void* ctx)
+boolean  liveobjects_do_init()
 {
   int ret;
 
   appv_con_liveobjects = 0;
-  appv_con_dnsresolve = DNS_RESOLVE_IDLE;
 
   LiveObjectsClient_InitDbgTrace(DBG_DFT_TRACE_LEVEL);
   LiveObjectsClient_SetDbgMsgDump(DBG_DFT_MSG_DUMP);
@@ -734,7 +695,6 @@ boolean  liveobjects_do_init(void* ctx)
 #endif
 
   appv_con_liveobjects = 1;
-  appv_con_dnsresolve = DNS_RESOLVE_IDLE;
 
   PRINTF("liveobjects_do_init: OK" MEOL);
   return true;
@@ -742,48 +702,12 @@ boolean  liveobjects_do_init(void* ctx)
 
 // ==========================================================
 //
-boolean liveobjects_do_resolve(void* ctx)
-{
-  int ret;
-  PRINTF("liveobjects_do_resolve: call LiveObjectsClient_DnsResolve ..." MEOL);
-  appv_con_dnsresolve = DNS_RESOLVE_IDLE;
-  ret = LiveObjectsClient_DnsResolve();
-  if (ret > 0) {
-    appv_con_dnsresolve = DNS_RESOLVE_PENDING;
-#if DNS_BLOCKING
-    PRINTF("liveobjects_do_resolve: LiveObjectsClient_DnsResolve -> ret (%d) => wait signal" MEOL, ret);
-    return false;
-#else
-    PRINTF("liveobjects_do_resolve: LiveObjectsClient_DnsResolve -> ret (%d) => don't wait !!!" MEOL, ret);
-    return true;
-#endif
-  }
-  else if (ret == 0) {
-    PRINTF("liveobjects_do_resolve: LiveObjectsClient_DnsResolve -> ret (%d) => OK" MEOL, ret);
-    appv_con_dnsresolve = DNS_RESOLVE_OK;
-  }
-  else {
-    appv_con_dnsresolve = DNS_RESOLVE_ERROR;
-    PRINTF("liveobjects_do_resolve: LiveObjectsClient_DnsResolve -> ERROR (%d)", ret);
-  }
-  return true;
-}
-// ==========================================================
-//
-boolean liveobjects_do_connect(void* ctx)
+boolean liveobjects_do_connect()
 {
   int ret;
 
   if (appv_con_liveobjects != 1) {
     PRINTF("liveobjects_do_connect: ERROR - unexpected state - appv_con_liveobjects=%d" MEOL, appv_con_liveobjects);
-    return true;
-  }
-  if (appv_bearer_event != VM_BEARER_ACTIVATED) {
-    PRINTF("liveobjects_do_connect: ERROR - unexpected state - appv_bearer_event=%d" MEOL, appv_bearer_event);
-    return true;
-  }
-  if (appv_con_dnsresolve != DNS_RESOLVE_OK) {
-    PRINTF("liveobjects_do_connect: ERROR - unexpected state - appv_con_dnsresolve=%d" MEOL, appv_con_dnsresolve);
     return true;
   }
 
@@ -807,87 +731,20 @@ boolean liveobjects_do_connect(void* ctx)
   return true;
 }
 
-// ==========================================================
-// Network Setup
-//
-
-// invoked in main thread context
-void bearer_callback(VMINT handle, VMINT event, VMUINT data_account_id, void *user_data)
-{
-  Serial.print("bearer_callback: ");
-  if (VM_BEARER_WOULDBLOCK == appv_bearer_handle) {
-    Serial.print("VM_BEARER_WOULDBLOCK");
-  }
-  else {
-    Serial.print(appv_bearer_handle);
-  }
-  Serial.print(" handle=");
-  Serial.print(handle);
-
-  Serial.print(" event=");
-  Serial.print(event);
-
-  switch (event)
-  {
-    case VM_BEARER_DEACTIVATED:
-      Serial.println(" VM_BEARER_DEACTIVATED");
-      if ((VM_BEARER_WOULDBLOCK == appv_bearer_handle))
-        LTask.post_signal();
-      break;
-    case VM_BEARER_ACTIVATING:
-      Serial.println(" VM_BEARER_ACTIVATING");
-      break;
-    case VM_BEARER_ACTIVATED:
-      Serial.println(" VM_BEARER_ACTIVATED -> Post Signal");
-      if ((VM_BEARER_WOULDBLOCK == appv_bearer_handle))
-        LTask.post_signal();
-      break;
-    case VM_BEARER_DEACTIVATING:
-      Serial.println(" VM_BEARER_DEACTIVATING");
-      break;
-    default:
-      Serial.println(" (unknown)");
-      break;
-  }
-  appv_bearer_handle = handle;
-  appv_bearer_event = event;
-}
-
-boolean bearer_open(void* ctx) {
-  appv_bearer_event = VM_BEARER_DEACTIVATED;
-
-  Serial.println("bearer_open: GPRS ...");
-  appv_bearer_handle = vm_bearer_open(VM_APN_USER_DEFINE ,  NULL, bearer_callback);
-
-  if (VM_BEARER_WOULDBLOCK == appv_bearer_handle) {
-    Serial.println("bearer_open: VM_BEARER_WOULDBLOCK -> wait signal ...");
-    return false;
-  }
-  if (appv_bearer_handle >= 0) {
-    Serial.println("bearer_open: OK");
-    appv_bearer_event = VM_BEARER_ACTIVATED;
-  }
-  else {
-    Serial.print("bearer_open: ERROR ");
-    Serial.print(appv_bearer_handle);
-    Serial.println (" ");
-  }
-  return true;
-}
 
 // ==========================================================
 // Main setup function
 //
 void setup()
 {
-  LTask.begin();
-  
   // Serial debug
   Serial.begin(115200);
   while (!Serial) {
     delay(100);
   }
 
+  // Set GSM module baud rate
+  SerialAT.begin(115200);
 
   // Init
   Serial.println(appv_version);
@@ -895,55 +752,45 @@ void setup()
   Serial.flush();
   delay(5000);
 
-  Serial.println(appv_version);
-  Serial.flush();
+  // Restart takes quite some time
+  // To skip it, call init() instead of restart()
+  Serial.print("Initializing Heracles modem... ");
+  modem.restart();
 
-  Serial.print(millis());
-  Serial.println(":SIM/GSM Ready ...");
-  while (!LSMS.ready())
-    delay(1000);
-  Serial.print(millis());
-  Serial.println(":OK");
-
-  // keep retrying until connected to network
-  Serial.print(millis());
-  Serial.println(":Connecting to GPRS...");
-  Serial.flush();
-  while (!LGPRS.attachGPRS(GPRS_APN, GPRS_USERNAME, GPRS_PASSWORD))
-  {
-    delay(1000);
-    Serial.println(" -> Retry ...");
+  String modemInfo = modem.getModemInfo();
+  if (modemInfo == "") {
+	  Serial.println("FAIL");
+	  while (true);
   }
+  Serial.print("OK: ");
+  Serial.println(modemInfo);
 
-  Serial.print(millis());
-  Serial.print(":OK apn= ");
-  Serial.print(LGPRS.getAPN());
-  Serial.println("");
+  Serial.print("Waiting for network... ");
+  if (!modem.waitForNetwork()) {
+    Serial.println("FAIL");
+    while (true);
+  }
+  Serial.println("OK");
+
+  // attachGPRS() used without any parameters for internal SIM.
+  // For external SIM, use attachGPRS("your apn", "user", "pswd")
+  Serial.print("Connecting to APN... ");
+  if (!modem.attachGPRS()) {
+      Serial.println("FAIL");
+      while (true);
+  }
+  Serial.println("OK");
 
   Serial.print(millis());
   Serial.println(":setup: call liveobjects_do_init ...");
-  LTask.remoteCall(&liveobjects_do_init, NULL);
-
-  if (appv_con_liveobjects == 1) {
-    Serial.print(millis());
-    Serial.println(":setup: call liveobjects_do_resolve ...");
-    LTask.remoteCall(&liveobjects_do_resolve, NULL);
-    Serial.print(millis());
-    Serial.print(":setup: resolve result = ");
-    Serial.print(appv_con_dnsresolve);
-    Serial.println("");
-  }
-
-  Serial.print(millis());
-  Serial.println(":setup: call bearer_open ...");
-  LTask.remoteCall(&bearer_open, NULL);
+  liveobjects_do_init();
 }
 
 
 // ==========================================================
 // nativeLoop which will use to do your main job in the loop
 //
-boolean nativeLoop(void* ctx)
+boolean nativeLoop()
 {
   unsigned long tf = millis() + 10000;
 
@@ -986,32 +833,18 @@ boolean nativeLoop(void* ctx)
 void loop()
 {
   if (appv_con_liveobjects == 2) {
-    LTask.remoteCall(nativeLoop, NULL);
+    nativeLoop();
   }
-  else if ((appv_bearer_event == VM_BEARER_ACTIVATED) &&  (appv_con_liveobjects == 1)) {
-    if (appv_con_dnsresolve == DNS_RESOLVE_OK) {
-      Serial.print(millis());
+  else if (appv_con_liveobjects == 1) {
       Serial.println(":loop: call liveobjects_do_connect ...");
-      LTask.remoteCall(&liveobjects_do_connect, NULL);
+      liveobjects_do_connect();
       if (appv_con_liveobjects != 2) {
         delay(5000);
       }
-    }
-    else if (appv_con_dnsresolve == DNS_RESOLVE_IDLE) {
-      Serial.print(millis());
-      Serial.println(":loop: call liveobjects_do_resolve ...");
-      LTask.remoteCall(&liveobjects_do_resolve, NULL);
-    }
-    else {
-      Serial.print(millis());
-      Serial.println(":loop: pause 1 s ...");
-      delay(1000);
-    }
   }
   else {
     Serial.print(millis());
     Serial.println(":loop: pause 5 s ...");
     delay(5000);
   }
-
 }
