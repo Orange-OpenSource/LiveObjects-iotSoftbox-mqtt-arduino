@@ -10,7 +10,7 @@ Visit [Datavenue Live Objects - complete guide](https://liveobjects.orange-busin
 
 And mainly the [Device mode](https://liveobjects.orange-business.com/doc/html/lo_manual.html#MQTT_MODE_DEVICE) section.
 
-Please, have a look to the [user manual](docs/liveobjects_starterkit_arduino_v1.2.pdf) to have a presentation of the library and to be more familiar with it.
+Please, have a look to the [user manual](docs/liveobjects_starterkit_arduino_v1.3.pdf) to have a presentation of the library and to be more familiar with it.
 
 **We use the [Arduino IDE](https://www.arduino.cc/en/Main/Software) for all our operations.** Download and install it before going any further.
 
